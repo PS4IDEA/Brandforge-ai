@@ -1,0 +1,213 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile information, credit balance, and subscription status.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's full name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL to the user's avatar"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Number of AI generation credits available"
+        },
+        "subscriptionPlan": {
+          "type": "string",
+          "enum": ["free", "pro", "business"],
+          "description": "Current subscription tier"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin"],
+          "description": "User's role for admin panel access"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "credits", "subscriptionPlan", "role", "createdAt"]
+    },
+    "Generation": {
+      "title": "AI Generation",
+      "description": "Stores a single AI generation (name, slogan, or brand kit).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID of the user who created this generation"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["name", "slogan", "domain", "identity"],
+          "description": "Type of the generation"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The user's original prompt"
+        },
+        "result": {
+          "type": "object",
+          "description": "The generated JSON result"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "type", "prompt", "result", "createdAt"]
+    },
+    "Logo": {
+      "title": "Logo Generation",
+      "description": "Stores a generated logo.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID of the user who created this logo"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The prompt used for the logo"
+        },
+        "style": {
+          "type": "string",
+          "description": "The selected logo style"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL of the generated logo image"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "prompt", "style", "imageUrl", "createdAt"]
+    },
+    "WelcomeEmail": {
+      "title": "Welcome Email Log",
+      "description": "Logs automated welcome emails sent to new users.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID of the user who received the email"
+        },
+        "recipientEmail": {
+          "type": "string",
+          "description": "Email address of the recipient"
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Name of the recipient"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject of the email"
+        },
+        "bodyHtml": {
+          "type": "string",
+          "description": "HTML content of the email"
+        },
+        "provider": {
+          "type": "string",
+          "description": "Provider used to send the email"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["sent", "failed"],
+          "description": "Status of the email"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trackingId": {
+          "type": "string",
+          "description": "Tracking ID of the email"
+        }
+      },
+      "required": ["userId", "recipientEmail", "recipientName", "subject", "bodyHtml", "provider", "status", "sentAt", "trackingId"]
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "description": "Stores user support tickets and contact inquires.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID of the user (or 'guest')"
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email of the contact sender"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject of the message"
+        },
+        "message": {
+          "type": "string",
+          "description": "Content of the message"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "resolved"],
+          "description": "Status of the ticket"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "userEmail", "subject", "message", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User profiles, mapped by Firebase Auth UID."
+    },
+    "users/{userId}/generations/{generationId}": {
+      "schema": {
+        "$ref": "#/entities/Generation"
+      },
+      "description": "Text-based generations saved by the user."
+    },
+    "users/{userId}/logos/{logoId}": {
+      "schema": {
+        "$ref": "#/entities/Logo"
+      },
+      "description": "Logos saved by the user."
+    },
+    "welcome_emails/{emailId}": {
+      "schema": {
+        "$ref": "#/entities/WelcomeEmail"
+      },
+      "description": "Logs of welcome emails sent to users."
+    },
+    "support_tickets/{ticketId}": {
+      "schema": {
+        "$ref": "#/entities/SupportTicket"
+      },
+      "description": "Customer support tickets and contact requests."
+    }
+  }
+}

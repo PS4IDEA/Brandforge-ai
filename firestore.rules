@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        ('email' in request.auth.token && request.auth.token.email == 'yoafyosf121@gmail.com') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-%]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    match /welcome_emails/{emailId} {
+      allow get, list: if isAdmin();
+      
+      allow create: if isSignedIn() 
+        && incoming().userId == request.auth.uid 
+        && incoming().recipientEmail is string 
+        && incoming().recipientName is string 
+        && incoming().subject is string 
+        && incoming().bodyHtml is string 
+        && incoming().provider is string 
+        && incoming().status in ['sent', 'failed'] 
+        && incoming().sentAt is string 
+        && incoming().trackingId is string;
+
+      allow update, delete: if false;
+    }
+
+    match /support_tickets/{ticketId} {
+      allow get, list, update, delete: if isAdmin();
+      
+      allow create: if isValidId(ticketId)
+        && incoming().userId is string
+        && incoming().userEmail is string
+        && incoming().userEmail.size() <= 256
+        && incoming().subject is string
+        && incoming().subject.size() <= 200
+        && incoming().message is string
+        && incoming().message.size() <= 10000
+        && incoming().status == 'open'
+        && incoming().createdAt is string;
+    }
+
+    // Rule matches
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      
+      // Let any signed in user view the user lists if they are an admin
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn() && isOwner(userId) 
+        && incoming().email is string 
+        && incoming().credits is number 
+        && incoming().subscriptionPlan in ['free', 'pro', 'business']
+        && incoming().role in ['user', 'admin']
+        && incoming().createdAt is string;
+
+      // Allow users to update their own profile (e.g. credits, subscription plan, details)
+      // and allow admins to update any profile
+      allow update: if isSignedIn() && (
+        (isOwner(userId) && (
+          // Standard user is NOT allowed to change their own role, email, or createdAt!
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'email', 'createdAt'])
+        )) ||
+        isAdmin()
+      );
+
+      allow delete: if isAdmin();
+
+      // Subcollections
+      match /generations/{generationId} {
+        allow get, list: if isOwner(userId);
+        
+        allow create: if isOwner(userId)
+          && incoming().userId == request.auth.uid
+          && incoming().type in ['name', 'slogan', 'domain', 'identity']
+          && incoming().prompt is string
+          && incoming().createdAt is string;
+          
+        allow update: if isOwner(userId)
+          && incoming().userId == existing().userId
+          && incoming().type == existing().type
+          && incoming().prompt == existing().prompt;
+          
+        allow delete: if isOwner(userId);
+      }
+
+      match /logos/{logoId} {
+        allow get, list: if isOwner(userId);
+        
+        allow create: if isOwner(userId)
+          && incoming().userId == request.auth.uid
+          && incoming().prompt is string
+          && incoming().style is string
+          && incoming().imageUrl is string
+          && incoming().createdAt is string;
+          
+        allow update: if isOwner(userId)
+          && incoming().userId == existing().userId
+          && incoming().prompt == existing().prompt
+          && incoming().style == existing().style;
+          
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

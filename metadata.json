@@ -1,0 +1,6 @@
+{
+  "name": "BrandForge AI",
+  "description": "Create modern brand names, slogans, dynamic logo designs, domain ideas, and complete visual brand identities using Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

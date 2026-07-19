@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Tajawal", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-brand-50: #f4f6fa;
+  --color-brand-100: #e9ecf5;
+  --color-brand-500: #4f46e5;
+  --color-brand-600: #4338ca;
+  --color-brand-700: #3730a3;
+  --color-brand-900: #1e1b4b;
+  --color-slate-850: #172033;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* Base custom classes with premium smooth rendering */
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background-color: #090d16;
+  color: #f8fafc;
+}
+
+/* RTL layout fixes & enhanced typography */
+[dir="rtl"] {
+  --font-sans: "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Tajawal", sans-serif;
+  font-family: "Tajawal", sans-serif;
+}
+
+/* Mirror directional icons in RTL mode */
+[dir="rtl"] .rtl-flip,
+[dir="rtl"] .lucide-chevron-right,
+[dir="rtl"] .lucide-arrow-right,
+[dir="rtl"] .lucide-chevron-left,
+[dir="rtl"] .lucide-arrow-left {
+  transform: scaleX(-1);
+  display: inline-block; /* Ensure transform applies cleanly */
+}
+
+/* Enhanced crisp, bold lines in light mode (non-dark) - softened for premium UI */
+html:not(.dark) .border,
+html:not(.dark) .border-b,
+html:not(.dark) .border-t,
+html:not(.dark) .border-r,
+html:not(.dark) .border-l {
+  border-width: 1px !important;
+  border-color: #cbd5e1 !important; /* much clearer, darker slate-300 */
+}
+
+html:not(.dark) .border-slate-50 {
+  border-width: 1px !important;
+  border-color: #e2e8f0 !important; /* soft elegant gray, but visible */
+}
+
+html:not(.dark) .border-slate-100 {
+  border-width: 1px !important;
+  border-color: #cbd5e1 !important; /* clearer border line */
+}
+
+html:not(.dark) .border-slate-200 {
+  border-width: 1px !important;
+  border-color: #94a3b8 !important; /* high-contrast slate-400 */
+}
+
+html:not(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-width: 1px !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-width: 1px !important;
+  border-color: #94a3b8 !important;
+}
+
+html:not(.dark) .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-width: 1px !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Make text colors much more legible and high-contrast in light mode */
+html:not(.dark) .text-slate-400 {
+  color: #64748b !important; /* slate-500 instead of slate-400 */
+}
+html:not(.dark) .text-slate-500 {
+  color: #475569 !important; /* slate-600 instead of slate-500 */
+}
+html:not(.dark) .text-slate-300 {
+  color: #64748b !important; /* slate-500 instead of slate-300 */
+}
+
+/* Ensure perfect visibility for typing/writing in input fields, textareas, and selects in light mode */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) textarea,
+html:not(.dark) select {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  border-width: 1.2px !important;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]):focus,
+html:not(.dark) textarea:focus,
+html:not(.dark) select:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+  outline: none !important;
+}
+
+/* Dark mode premium inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  color: #f8fafc !important;
+  background-color: #0d1321 !important;
+  border-color: #1e293b !important;
+  border-width: 1.2px !important;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+  outline: none !important;
+}
+
+/* Custom CSS Keyframes and Classes for robust rendering */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Guarantee robust, high-contrast visibility for landing hero texts */
+#hero-tagline {
+  color: #0f172a !important; /* solid slate-900 black in light mode */
+}
+.dark #hero-tagline {
+  color: #ffffff !important; /* pure white in dark mode */
+}
+
+#hero-description {
+  color: #475569 !important; /* clear dark slate-600/700 in light mode */
+}
+.dark #hero-description {
+  color: #94a3b8 !important; /* crisp slate-400 in dark mode */
+}
+
+/* Soft transition effects on all interactive elements */
+button, a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+
+@keyframes progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /?page=dashboard
+Disallow: /?page=admin
+
+Sitemap: https://www.brandforge-ai.work/sitemap.xml
