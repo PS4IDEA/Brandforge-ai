@@ -12,11 +12,10 @@ import ColorPaletteGenerator from './components/ColorPaletteGenerator';
 import AdminPanel from './components/AdminPanel';
 import BlogFAQPages from './components/BlogFAQPages';
 import DashboardOverview from './components/DashboardOverview';
-import BusinessCardMaker from './components/services/BusinessCardMaker';
-import SocialMediaAssets from './components/services/SocialMediaAssets';
-import SeoOptimization from './components/services/SeoOptimization';
 import BrandVoice from './components/services/BrandVoice';
-import LogoMaker from './components/services/LogoMaker';
+import BrandStrategyGenerator from './components/BrandStrategyGenerator';
+import BrandIdentityGenerator from './components/BrandIdentityGenerator';
+import BrandAndStrategyGenerator from './components/BrandAndStrategyGenerator';
 import { sendWelcomeEmail, sendTestEmail } from './lib/emailService';
 import { 
   Sparkles, ShieldCheck, Coins, Users, Rocket, Target, 
@@ -189,7 +188,7 @@ export default function App() {
         setLanguage(urlLang);
       }
       
-      const validPages: Page[] = ['landing', 'features', 'pricing', 'blog', 'faq', 'contact', 'terms', 'privacy', 'dashboard', 'admin', 'business-cards', 'social-media', 'seo', 'logo-maker'];
+      const validPages: Page[] = ['landing', 'features', 'pricing', 'blog', 'faq', 'contact', 'terms', 'privacy', 'dashboard', 'admin', 'brand-strategy-generator', 'brand-identity-generator', 'brand-creator-strategy'];
       if (urlPage && validPages.includes(urlPage as Page)) {
         setCurrentPage(urlPage as Page);
       }
@@ -1269,25 +1268,13 @@ export default function App() {
                 {t.description}
               </p>
 
-              <div className="flex flex-wrap justify-center gap-4 pt-4">
+              <div className="flex justify-center pt-4">
                 <button
-                  onClick={() => {
-                    if (user) {
-                      setCurrentPage('dashboard');
-                      setActiveDashboardTab('overview');
-                    } else {
-                      setShowAuthModal(true);
-                    }
-                  }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-8 py-3.5 rounded-2xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+                  id="btn-nav-brand-stratg"
+                  onClick={() => setCurrentPage('brand-creator-strategy')}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg px-8 py-4 rounded-full shadow-lg hover:shadow-orange-500/20 shadow-orange-500/10 transition-all duration-300 transform hover:-translate-y-0.5"
                 >
-                  {t.getStarted}
-                </button>
-                <button
-                  onClick={() => setCurrentPage('features')}
-                  className="bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:border-slate-800 dark:text-white font-semibold text-sm px-8 py-3.5 rounded-2xl transition-all cursor-pointer"
-                >
-                  {t.exploreFeatures}
+                  {language === 'ar' ? 'Generate Brand and Strategy' : 'Generate Brand and Strategy'}
                 </button>
               </div>
 
@@ -1429,6 +1416,37 @@ export default function App() {
           </div>
         )}
 
+        {/* BRAND STRATEGY GENERATOR */}
+        {currentPage === 'brand-strategy-generator' && (
+          <BrandStrategyGenerator
+            language={language}
+            user={user}
+            onDeductCredits={deductCredits}
+            onOpenLogin={() => setShowAuthModal(true)}
+          />
+        )}
+        
+        {/* BRAND IDENTITY GENERATOR */}
+        {currentPage === 'brand-identity-generator' && (
+          <BrandIdentityGenerator
+            language={language}
+            user={user}
+            onDeductCredits={deductCredits}
+            onOpenLogin={() => setShowAuthModal(true)}
+          />
+        )}
+
+        {/* UNIFIED BRAND & STRATEGY GENERATOR */}
+        {currentPage === 'brand-creator-strategy' && (
+          <BrandAndStrategyGenerator
+            language={language}
+            user={user}
+            onDeductCredits={deductCredits}
+            onOpenLogin={() => setShowAuthModal(true)}
+          />
+        )}
+
+
         {/* DASHBOARD WORKSPACE */}
         {currentPage === 'dashboard' && user && (
           <DashboardOverview
@@ -1469,41 +1487,6 @@ export default function App() {
             welcomeEmails={welcomeEmails}
             onSendTestEmail={handleSendTestEmail}
             currentUserEmail={user?.email || ''}
-          />
-        )}
-
-        {/* ADDITIONAL SERVICES */}
-        {currentPage === 'business-cards' && (
-          <BusinessCardMaker 
-            language={language} 
-            user={user}
-            onDeductCredits={deductCredits}
-            onOpenLogin={() => setShowAuthModal(true)}
-          />
-        )}
-        {currentPage === 'social-media' && (
-          <SocialMediaAssets 
-            language={language} 
-            user={user}
-            onDeductCredits={deductCredits}
-            onOpenLogin={() => setShowAuthModal(true)}
-          />
-        )}
-        {currentPage === 'seo' && (
-          <SeoOptimization 
-            language={language} 
-            user={user}
-            onDeductCredits={deductCredits}
-            onOpenLogin={() => setShowAuthModal(true)}
-          />
-        )}
-        {currentPage === 'logo-maker' && (
-          <LogoMaker 
-            language={language} 
-            user={user}
-            onDeductCredits={deductCredits}
-            onOpenLogin={() => setShowAuthModal(true)}
-            onSaveLogo={handleSaveLogo}
           />
         )}
 

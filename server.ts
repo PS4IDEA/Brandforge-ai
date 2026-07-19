@@ -15,6 +15,10 @@ app.use(express.json());
 let aiInstance: GoogleGenAI | null = null;
 let lastUsedKey: string | null = null;
 
+console.log("[Startup] Checking environment variables...");
+console.log("[Startup] GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY);
+console.log("[Startup] OPENROUTER_API_KEY present:", !!process.env.OPENROUTER_API_KEY);
+
 function getAI() {
   let apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -560,6 +564,54 @@ function generateLocalFallbackResponse(systemPrompt: string, jsonParser?: (text:
       }
     };
   }
+  // 7.5. Brand Identity & Strategy Combined Generator
+  else if (systemPrompt.includes("Brand Identity AND a comprehensive Brand Strategy") || (systemPrompt.includes("brandName") && systemPrompt.includes("visionMission"))) {
+    const conceptMatch = systemPrompt.match(/Concept\/Description:\s*"(.*)"/i) || systemPrompt.match(/concept:\s*"(.*)"/i) || systemPrompt.match(/description:\s*"(.*)"/i);
+    const concept = conceptMatch ? conceptMatch[1].trim() : "Creative Solution";
+    const baseName = concept.split(/\s+/)[0] || "Novus";
+    const name = isAr ? `${baseName} تك` : `${baseName}ly`;
+    
+    parsedData = {
+      brand: {
+        brandName: name,
+        tagline: isAr ? `نبتكر لنرتقي بـ ${concept}` : `Empowering the Future of ${concept}`,
+        logoConcept: isAr 
+          ? `تصميم هندسي متوازن يعتمد على خطوط ناعمة دائرية، يتوسطه رمز نمو متدرج للأعلى، ليعبر عن الصعود والابتكار الثابت لـ ${concept}.`
+          : `A balanced geometric logo with sleek circular curves and an ascending growth chevron at the center, symbolizing modern stability and continuous innovation for ${concept}.`,
+        colors: [
+          { hex: "#FF5A5F", name: isAr ? "غروب برتقالي" : "Sunset Orange" },
+          { hex: "#0F172A", name: isAr ? "أزرق كوني" : "Cosmic Navy" },
+          { hex: "#F8FAFC", name: isAr ? "رمادي ثلجي" : "Snow Gray" },
+          { hex: "#10B981", name: isAr ? "زمرد حيوي" : "Vital Emerald" }
+        ],
+        personality: isAr 
+          ? "علامة متميزة تمزج بين الحماس والاحترافية والابتكار المستمر لتلهم الثقة."
+          : "An elite and inspiring brand identity that seamlessly blends human empathy with crisp professional brilliance.",
+        targetAudience: isAr ? "الشركات الناشئة والمبدعون الرقميون" : "Modern startups and digital visionaries",
+        industry: isAr ? "التقنية والخدمات الإبداعية" : "Technology & Creative Services"
+      },
+      strategy: {
+        title: isAr ? `استراتيجية التوسع الشاملة لـ ${name}` : `The Complete Scaling Strategy for ${name}`,
+        visionMission: isAr 
+          ? "الرؤية: قيادة الابتكار في قطاع الأعمال بأسلوب متميز. الرسالة: تمكين الأفراد والمؤسسات من تحقيق طموحاتهم عبر أدوات ذكية وموثوقة."
+          : "Vision: Standardizing industry-leading creativity. Mission: Empowering visionaries to scale with high-fidelity branding instruments.",
+        valueProposition: isAr 
+          ? "تقديم حلول وهوية بصرية متكاملة فوراً وبدقة متناهية تفوق التوقعات."
+          : "Delivering institutional-grade brand identities instantly at a fraction of traditional agency costs.",
+        persona: isAr 
+          ? "رائد الأعمال الطموح (30-45 سنة) الذي يبحث عن هوية تجارية ممتازة للبدء بقوة وثقة."
+          : "The ambitious founder (aged 25-45) seeking to secure high-quality aesthetics and branding to raise capital.",
+        competitors: isAr 
+          ? "التفوق عبر الابتكار الفوري، الذكاء والسرعة، والتحليلات المتكاملة للهوية."
+          : "Outperforming traditional creative agencies with rapid turnaround times and AI-grounded insights.",
+        roadmap: [
+          { phase: isAr ? "المرحلة الأولى: البناء والانتشار" : "Phase 1: Brand Activation", details: isAr ? "إطلاق الهوية البصرية والترويج الأولي في القنوات المستهدفة." : "Deploying core visual assets and initiating localized search marketing campaigns." },
+          { phase: isAr ? "المرحلة الثانية: التموضع والنمو" : "Phase 2: Market Integration", details: isAr ? "بناء مجتمع مخلص والاندماج مع خدمات الدعم الإضافية." : "Cultivating early-adopter feedback loops and scaling content channels." },
+          { phase: isAr ? "المرحلة الثالثة: الريادة والتوسع" : "Phase 3: Operational Scaling", details: isAr ? "تحقيق التوسع الدولي وابتكار حلول جديدة متميزة." : "Automating brand iterations and entering multi-national markets." }
+        ]
+      }
+    };
+  }
   // 8. SEO Optimization
   else {
     const keywords = isAr ? [
@@ -715,7 +767,13 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
 
       if (jsonParser) {
         try {
-          const parsed = jsonParser(text);
+          let cleanedText = text.trim();
+          if (cleanedText.startsWith("```json")) {
+            cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+          } else if (cleanedText.startsWith("```")) {
+            cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+          }
+          const parsed = jsonParser(cleanedText);
           console.log(`[Backend API] SUCCESS with OpenRouter model ${orModel} (Valid JSON Parsed)`);
           return { response: formattedResponse, parsed };
         } catch (parseErr: any) {
@@ -773,7 +831,13 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
 
         if (jsonParser) {
           try {
-            const parsed = jsonParser(text);
+            let cleanedText = text.trim();
+            if (cleanedText.startsWith("```json")) {
+              cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+            } else if (cleanedText.startsWith("```")) {
+              cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+            }
+            const parsed = jsonParser(cleanedText);
             console.log(`[Backend API] SUCCESS with model ${model} (Valid JSON Parsed)`);
             return { response, parsed };
           } catch (parseErr: any) {
@@ -1746,6 +1810,127 @@ Return ONLY pure JSON. Do not wrap in markdown blocks like \`\`\`json.`;
   } catch (error: any) {
     console.error("Error analyzing Brand Voice:", error);
     res.status(500).json({ success: false, error: error.message || "Failed to analyze Brand Voice" });
+  }
+});
+
+app.post("/api/generate-brand-strategy", async (req, res) => {
+  try {
+    const { brandName, industry, targetAudience, goals, language } = req.body;
+    
+    const ai = getAI();
+    const systemPrompt = `You are a world-class business strategist. Analyze the brand "${brandName}" in the ${industry} industry targeting ${targetAudience} to achieve ${goals}. Provide a comprehensive 5-part strategy: 
+    1. Vision & Mission
+    2. Unique Value Proposition
+    3. Target Audience Persona
+    4. Key Competitor Advantages
+    5. Actionable Roadmap.
+    
+    Respond in ${language === 'ar' ? 'Arabic' : 'English'}.
+    Return JSON: { "title": "Strategy Title", "content": "Detailed strategy content" }`;
+
+    const result = await generateContentWithRetry(ai, {
+      model: "gemini-flash-latest",
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    }, 2, robustParseJSON);
+
+    res.json({ success: true, strategy: result.parsed });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/generate-brand-from-description", async (req, res) => {
+  try {
+    const { description, language } = req.body;
+    
+    const ai = getAI();
+    const systemPrompt = `You are an elite branding expert and creative director. Based on this description or concept of a new project/idea: "${description}", design a complete, premium Brand Identity.
+    Provide the following in your JSON response:
+    1. brandName: A unique, memorable, and creative name for the brand (provide both English and Arabic if appropriate).
+    2. tagline: A powerful, catchy tagline/slogan.
+    3. logoConcept: A detailed description of an elegant, modern visual logo design concept (shapes, layout, meaning).
+    4. colors: An array of 4-5 hex colors representing the brand, each with a hex code and a descriptive name (e.g. { hex: "#FF5A5F", name: "Sunset Orange" }).
+    5. personality: A brief paragraph describing the brand's tone of voice and core personality.
+    6. targetAudience: Suggestions for the ideal target audience.
+    7. industry: The best-fitting industry category.
+
+    Respond in ${language === 'ar' ? 'Arabic' : 'English'}.
+    Return JSON format:
+    {
+      "brandName": "Name",
+      "tagline": "Tagline",
+      "logoConcept": "Concept details",
+      "colors": [ { "hex": "#123456", "name": "Color Name" } ],
+      "personality": "Tone and style",
+      "targetAudience": "Audience details",
+      "industry": "Industry category"
+    }`;
+
+    const result = await generateContentWithRetry(ai, {
+      model: "gemini-flash-latest",
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    }, 2, robustParseJSON);
+
+    res.json({ success: true, brand: result.parsed });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/generate-brand-and-strategy", async (req, res) => {
+  try {
+    const { description, brandName, industry, targetAudience, goals, language } = req.body;
+    
+    const ai = getAI();
+    const systemPrompt = `You are an elite creative director and strategic brand consultant.
+    Based on the following parameters, design both a premium Brand Identity AND a comprehensive Brand Strategy.
+    
+    Parameters:
+    - Concept/Description: "${description}"
+    - Current Brand Name (if any): "${brandName || 'Not specified'}"
+    - Industry/Niche: "${industry || 'Not specified'}"
+    - Target Audience: "${targetAudience || 'Not specified'}"
+    - Goals: "${goals || 'Not specified'}"
+
+    Please provide your entire response in ${language === 'ar' ? 'Arabic' : 'English'}.
+    You MUST return a JSON object conforming exactly to this structure:
+    {
+      "brand": {
+        "brandName": "A unique, memorable, and creative name for the brand",
+        "tagline": "A powerful, catchy tagline or slogan",
+        "logoConcept": "A detailed description of an elegant, modern visual logo design concept (shapes, layout, meaning)",
+        "colors": [
+          { "hex": "#HEXCODE", "name": "Cohesive Color Name" }
+        ],
+        "personality": "A brief paragraph describing the brand's tone of voice and core personality.",
+        "targetAudience": "Target audience description",
+        "industry": "Industry category"
+      },
+      "strategy": {
+        "title": "Comprehensive Brand Strategy Title",
+        "visionMission": "Vision & Mission statement",
+        "valueProposition": "Unique Value Proposition description",
+        "persona": "Detailed target customer profile/persona",
+        "competitors": "Key competitive advantage analysis",
+        "roadmap": [
+          { "phase": "Phase 1: Launch & Build", "details": "Actionable milestone details" },
+          { "phase": "Phase 2: Growth & Traction", "details": "Actionable milestone details" },
+          { "phase": "Phase 3: Scale & Dominate", "details": "Actionable milestone details" }
+        ]
+      }
+    }`;
+
+    const result = await generateContentWithRetry(ai, {
+      model: "gemini-flash-latest",
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    }, 2, robustParseJSON);
+
+    res.json({ success: true, data: result.parsed });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

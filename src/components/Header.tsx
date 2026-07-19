@@ -108,37 +108,6 @@ export default function Header({
               {t.features}
             </button>
             
-            {/* Services Dropdown */}
-            <div className="relative group cursor-pointer">
-              <button className="flex items-center gap-1 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors duration-200">
-                {language === 'ar' ? 'خدمات إضافية' : 'Additional Services'}
-                <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {/* Dropdown Menu */}
-              <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top translate-y-2 group-hover:translate-y-0">
-                <div className="p-2 flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
-                  <button onClick={() => handleNavClick('logo-maker')} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></div>
-                    {language === 'ar' ? 'تصميم شعار احترافي 3D وعادي' : '3D & Flat Logo Maker'}
-                  </button>
-                  <button onClick={() => handleNavClick('business-cards')} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                    {language === 'ar' ? 'تصميم بطاقات العمل' : 'Business Card Maker'}
-                  </button>
-                  <button onClick={() => handleNavClick('social-media')} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-pink-500"></div>
-                    {language === 'ar' ? 'أصول السوشيال ميديا' : 'Social Media Assets'}
-                  </button>
-                  <button onClick={() => handleNavClick('seo')} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                    {language === 'ar' ? 'تحسين محركات البحث SEO' : 'SEO Optimization'}
-                  </button>
-                </div>
-              </div>
-            </div>
 
             <button 
               onClick={() => handleNavClick('pricing')}
@@ -245,13 +214,6 @@ export default function Header({
             {t.features}
           </button>
           
-          <div className="flex flex-col gap-2 px-4 py-2 border-l-2 border-indigo-100 dark:border-indigo-900/30 ml-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{language === 'ar' ? 'خدمات إضافية' : 'Additional Services'}</span>
-            <button onClick={() => handleNavClick('logo-maker')} className="text-left text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">{language === 'ar' ? 'تصميم شعار احترافي 3D وعادي' : '3D & Flat Logo Maker'}</button>
-            <button onClick={() => handleNavClick('business-cards')} className="text-left text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">{language === 'ar' ? 'تصميم بطاقات العمل' : 'Business Card Maker'}</button>
-            <button onClick={() => handleNavClick('social-media')} className="text-left text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">{language === 'ar' ? 'أصول السوشيال ميديا' : 'Social Media Assets'}</button>
-            <button onClick={() => handleNavClick('seo')} className="text-left text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">{language === 'ar' ? 'تحسين محركات البحث SEO' : 'SEO Optimization'}</button>
-          </div>
 
           <button 
             onClick={() => handleNavClick('pricing')}

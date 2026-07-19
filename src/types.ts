@@ -11,10 +11,9 @@ export type Page =
   | 'privacy' 
   | 'dashboard' 
   | 'admin'
-  | 'business-cards'
-  | 'social-media'
-  | 'seo'
-  | 'logo-maker';
+  | 'brand-strategy-generator'
+  | 'brand-identity-generator'
+  | 'brand-creator-strategy';
 
 export type DashboardTab = 
   | 'overview' 

@@ -5,6 +5,7 @@ import { translations } from '../translations';
 import { Language, UserProfile, GeneratedBrandKit } from '../types';
 import { Download, Sparkles, Bookmark, Copy, Check, Palette, Type, MessageSquare, AlertTriangle, RefreshCw, Share2 } from 'lucide-react';
 import { fetchAPI } from '../lib/api';
+import LoadingOverlay from './ui/LoadingOverlay';
 
 interface BrandKitGeneratorProps {
   language: Language;
@@ -24,6 +25,7 @@ export default function BrandKitGenerator({
   onOpenLogin,
 }: BrandKitGeneratorProps) {
   const t = translations[language];
+  const isAr = language === 'ar';
 
   const [name, setName] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -131,7 +133,8 @@ export default function BrandKitGenerator({
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in relative">
+      <LoadingOverlay isLoading={loading} language={language} message={isAr ? 'جاري بناء الدليل الشامل...' : 'Building brand kit...'} />
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-100/40 dark:shadow-none">
         
         <div className="flex items-center gap-3 mb-6">
