@@ -1095,7 +1095,7 @@ app.post("/api/send-email", async (req, res) => {
 // PayPal runtime client configuration endpoint to retrieve client-side PayPal credentials securely at runtime (avoiding Vite build-time static replacement issues)
 app.get("/api/config/paypal", (req, res) => {
   try {
-    const clientId = process.env.VITE_PAYPAL_CLIENT_ID || 'AZ8fij04JWpaxAXqbNcJlU7Kr1ZLdS2T9cpgJeosyshG8C9dZTXPE2bkcbuw1Oyo9WjJjlo6qhVbrmlI';
+    const clientId = process.env.VITE_PAYPAL_CLIENT_ID || 'AalzFnIlGCuQWs_jjLoTucozINRTcA1hpbeGKzqhWk5H-p7ve2TW3FHTq8bCg0-i5Td0bto7qurZ8Q-g';
     const cleanedClientId = clientId.trim().replace(/^['"]|['"]$/g, '');
     res.json({ clientId: cleanedClientId });
   } catch (error: any) {
