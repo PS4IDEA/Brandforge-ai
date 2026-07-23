@@ -233,7 +233,7 @@ function robustParseJSON(text: string): any {
 async function generateClientContentWithRetry(ai: any, systemPrompt: string, config: any = {}): Promise<any> {
   const modelsToTry = [
     "gemini-2.5-flash",
-    "gemini-1.5-flash",
+    "gemini-2.5-pro",
     "gemini-flash-latest"
   ];
   let lastError: any = null;
@@ -253,7 +253,7 @@ async function generateClientContentWithRetry(ai: any, systemPrompt: string, con
         return response;
       } catch (err: any) {
         lastError = err;
-        console.warn(`[Client API] Attempt with model ${model} (attempt ${r + 1}/2) failed:`, err);
+        console.log(`[Client API] Attempt with model ${model} (attempt ${r + 1}/2) note:`, err?.message || err);
         
         const message = err.message || "";
         const status = err.status || err.statusCode;
@@ -261,20 +261,20 @@ async function generateClientContentWithRetry(ai: any, systemPrompt: string, con
         // If it is a clear authentication/API key error, abort early since no model will work with an invalid key
         const isAuthError = status === 401 || status === 403 || message.includes("API_KEY_INVALID") || message.includes("API key not valid") || message.includes("invalid API key");
         if (isAuthError) {
-          console.error(`[Client API] Auth Error! Aborting fallback loop.`);
+          console.log(`[Client API] Auth Error note. Aborting fallback loop.`);
           throw err;
         }
 
         const isQuotaError = status === 429 || message.includes("Quota") || message.includes("quota");
         if (isQuotaError) {
-          console.warn(`[Client API] Quota exhausted or rate limited for ${model}. Breaking retry loop to try next model.`);
+          console.log(`[Client API] Quota note for ${model}. Trying next fallback model.`);
           break; // Skip retries for this model, try the next one
         }
 
         // If it is a different 400 (like bad request due to invalid parameters other than model), we only abort if it's not a model-not-found error
         const isModelNotFoundError = message.includes("not found") || message.includes("not supported") || message.includes("unsupported") || message.includes("model");
         if ((status === 400 || message.includes("INVALID_ARGUMENT")) && !isModelNotFoundError) {
-          console.error(`[Client API] Bad Request (non-model error). Aborting fallback loop.`);
+          console.log(`[Client API] Request parameter note. Aborting fallback loop.`);
           throw err;
         }
 
