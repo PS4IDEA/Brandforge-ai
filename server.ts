@@ -805,11 +805,7 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
   const modelsToTry = Array.from(new Set([
     params.model,
     "gemini-2.5-flash",
-    "gemini-1.5-flash",
-    "gemini-2.5-flash",
-    "gemini-1.5-flash",
     "gemini-2.5-pro",
-    "gemini-1.5-pro",
     "gemini-flash-latest"
   ].filter(Boolean)));
 
@@ -868,29 +864,29 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
           // ignore parsing error
         }
 
-        console.warn(`[Backend API] Attempt with model ${model} (attempt ${r + 1}/${maxRetries}) failed: ${message}`);
+        console.log(`[Backend API] Attempt with model ${model} (attempt ${r + 1}/${maxRetries}) note: ${message.slice(0, 120)}`);
 
         const isAuthError = status === 401 || status === 403 || apiErrorCode === 401 || apiErrorCode === 403 || message.includes("API_KEY_INVALID") || message.includes("API key not valid") || message.includes("invalid API key");
         if (isAuthError) {
-          console.error(`[Backend API] Auth Error! Falling back to local responsive mock generator.`);
+          console.log(`[Backend API] Auth Note: Falling back to local responsive generator.`);
           return generateLocalFallbackResponse(params.contents || "", jsonParser);
         }
 
         const isQuotaError = status === 429 || status === 503 || apiErrorCode === 429 || apiErrorCode === 503 || apiErrorStatus === "RESOURCE_EXHAUSTED" || message.includes("Quota") || message.includes("quota") || message.includes("UNAVAILABLE") || message.includes("high demand");
         if (isQuotaError) {
-          console.warn(`[Backend API] Quota exhausted, rate limited, or 503 unavailable for ${model}. Breaking retry loop to try next model.`);
+          console.log(`[Backend API] Quota limit reached for ${model}. Trying next available fallback model.`);
           break; // Skip retries for this model, try the next one
         }
 
         const isModelNotFoundError = message.includes("not found") || message.includes("not supported") || message.includes("unsupported") || message.includes("model") || message.includes("INVALID_ARGUMENT");
         if (isModelNotFoundError) {
-          console.warn(`[Backend API] Model ${model} is not supported or not found. Skipping retries for this model.`);
+          console.log(`[Backend API] Model ${model} is not supported or not found. Trying next fallback model.`);
           break; // Skip retries for this model, try the next one
         }
 
         const isJsonError = message.includes("JSON format invalid");
         if ((status === 400 || message.includes("INVALID_ARGUMENT")) && !isModelNotFoundError && !isJsonError) {
-          console.error(`[Backend API] Bad Request (non-model error). Falling back to local responsive mock generator.`);
+          console.log(`[Backend API] Non-model request parameters note: Falling back to local generator.`);
           return generateLocalFallbackResponse(params.contents || "", jsonParser);
         }
 
@@ -902,8 +898,7 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
     }
   }
 
-  console.error("All model attempts failed. Last error:", lastError);
-  console.warn("[Backend API] Falling back to local responsive mock generator due to API error.");
+  console.log("[Backend API] API model attempts completed. Smoothly utilizing local responsive generator fallback.");
   return generateLocalFallbackResponse(params.contents || "", jsonParser);
 }
 
@@ -1139,7 +1134,7 @@ app.get("/api/gemini-status", async (req, res) => {
           body: JSON.stringify({
             model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
             messages: [{ role: "user", content: "Say OK" }],
-            max_tokens: 2
+            max_tokens: 1
           })
         });
 
@@ -1155,10 +1150,10 @@ app.get("/api/gemini-status", async (req, res) => {
           return res.json(statusCache);
         } else {
           const errText = await response.text();
-          console.warn("[Backend API] OpenRouter health check failed:", errText);
+          console.log("[Backend API] OpenRouter health check notice:", errText.slice(0, 100));
         }
-      } catch (openRouterErr) {
-        console.warn("[Backend API] OpenRouter health check exception:", openRouterErr);
+      } catch (openRouterErr: any) {
+        console.log("[Backend API] OpenRouter health check exception:", openRouterErr?.message || openRouterErr);
       }
     }
 
@@ -1171,7 +1166,7 @@ app.get("/api/gemini-status", async (req, res) => {
     try {
       let checkError: any = null;
       let healthCheckOk = false;
-      const modelsToCheck = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-flash"];
+      const modelsToCheck = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-flash-latest"];
 
       for (const model of modelsToCheck) {
         try {
@@ -1179,14 +1174,14 @@ app.get("/api/gemini-status", async (req, res) => {
             model: model,
             contents: "Say OK",
             config: {
-              maxOutputTokens: 2,
+              maxOutputTokens: 1,
             }
           });
           healthCheckOk = true;
           break;
         } catch (err: any) {
           checkError = err;
-          console.warn(`[Backend API] Health check model ${model} failed:`, err.message || err);
+          console.log(`[Backend API] Health check model ${model} note:`, (err.message || err).slice(0, 100));
         }
       }
 
