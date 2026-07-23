@@ -8,6 +8,7 @@ import {
 import { Language, UserProfile } from '../../types';
 import LoadingOverlay from '../ui/LoadingOverlay';
 import { motion } from 'motion/react';
+import { fetchAPI } from '../../lib/api';
 
 interface Props {
   language: Language;
@@ -129,7 +130,7 @@ ${data.beforeAfter?.explanation || ''}
     }
 
     try {
-      const response = await fetch('/api/brand-voice-analyze', {
+      const resJson = await fetchAPI('/api/brand-voice-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -141,8 +142,6 @@ ${data.beforeAfter?.explanation || ''}
           language 
         })
       });
-
-      const resJson = await response.json();
 
       if (resJson.success && resJson.analysis) {
         if (onDeductCredits) {

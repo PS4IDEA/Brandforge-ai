@@ -3,6 +3,7 @@ import { Sparkles, Loader2, Coins, Target, Award, CheckCircle2, Copy, Download }
 import { Language, UserProfile } from '../types';
 import LoadingOverlay from './ui/LoadingOverlay';
 import { motion } from 'motion/react';
+import { fetchAPI } from '../lib/api';
 
 interface Props {
   language: Language;
@@ -34,7 +35,7 @@ export default function BrandStrategyGenerator({ language, user, onDeductCredits
     setError('');
     
     try {
-      const response = await fetch('/api/generate-brand-strategy', {
+      const resJson = await fetchAPI('/api/generate-brand-strategy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -46,19 +47,13 @@ export default function BrandStrategyGenerator({ language, user, onDeductCredits
         })
       });
 
-      const resJson = await response.json();
-
       if (resJson.success && resJson.strategy) {
         if (onDeductCredits) {
           onDeductCredits(5);
         }
         setResult(resJson.strategy);
       } else {
-        if (response.status === 429) {
-          setError(isAr ? 'تم تجاوز حصة الطلبات اليومية، يرجى المحاولة لاحقاً.' : 'Daily API quota exceeded, please try again later.');
-        } else {
-          setError(resJson.error || (isAr ? 'فشل توليد الاستراتيجية.' : 'Failed to generate strategy.'));
-        }
+        setError(resJson.error || (isAr ? 'فشل توليد الاستراتيجية.' : 'Failed to generate strategy.'));
       }
     } catch (err: any) {
       setError(isAr ? 'حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.' : 'A network error occurred.');

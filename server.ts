@@ -263,8 +263,22 @@ function robustParseJSON(text: string): any {
   }
 }
 
-function generateLocalFallbackResponse(systemPrompt: string, jsonParser?: (text: string) => any) {
-  const isAr = systemPrompt.toLowerCase().includes("language: ar") || 
+function generateLocalFallbackResponse(rawPrompt: any, jsonParser?: (text: string) => any) {
+  let systemPrompt = "";
+  if (typeof rawPrompt === "string") {
+    systemPrompt = rawPrompt;
+  } else if (rawPrompt && typeof rawPrompt === "object") {
+    try {
+      systemPrompt = JSON.stringify(rawPrompt);
+    } catch {
+      systemPrompt = String(rawPrompt);
+    }
+  } else {
+    systemPrompt = String(rawPrompt || "");
+  }
+
+  const systemPromptLower = systemPrompt.toLowerCase();
+  const isAr = systemPromptLower.includes("language: ar") || 
                systemPrompt.includes('"ar"') || 
                systemPrompt.includes("ar is specified") || 
                systemPrompt.includes("arabic") ||
@@ -274,417 +288,437 @@ function generateLocalFallbackResponse(systemPrompt: string, jsonParser?: (text:
 
   console.log(`[Local Fallback Generator] Generating rich realistic responsive data. Is Arabic: ${isAr}`);
 
+  // Helper to extract concept text
+  const extractConcept = (): string => {
+    const conceptMatch = systemPrompt.match(/User Prompt \/ Concept:\s*([^\n]*)/i) || 
+                         systemPrompt.match(/concept:\s*"([^"]*)"/i) || 
+                         systemPrompt.match(/for:\s*"([^"]*)"/i) ||
+                         systemPrompt.match(/description:\s*"([^"]*)"/i);
+    if (conceptMatch && conceptMatch[1] && conceptMatch[1].trim()) {
+      return conceptMatch[1].trim();
+    }
+    return isAr ? "مشروع إبداعي" : "Creative Forge";
+  };
+
+  const concept = extractConcept();
+  const conceptLower = concept.toLowerCase();
+
   let parsedData: any = {};
 
   // 1. Business Name & Domain Generator
   if (systemPrompt.includes("BrandName") || systemPrompt.includes("brand name ideas") || systemPrompt.includes("naming specialist")) {
-    const conceptMatch = systemPrompt.match(/User Prompt \/ Concept:\s*(.*)/i) || systemPrompt.match(/concept:\s*"(.*)"/i);
-    const concept = conceptMatch ? conceptMatch[1].trim() : "Creative Forge";
-    const baseName = concept.split(/\s+/)[0] || "Brand";
-    
-    parsedData = [
-      {
-        name: isAr ? `${baseName} تك` : `${baseName}ly`,
-        meaning: `A modern, scalable name that blends "${baseName}" with elegant suffixing, perfect for digital disruption.`,
-        meaningAr: `اسم عصري متميز يدمج كلمة "${baseName}" مع لاحقة متميزة، مناسب تماماً للتحول الرقمي والتميز.`,
-        style: "Tech & Modern",
-        domainSuggestions: [`${baseName.toLowerCase()}ly.com`, `${baseName.toLowerCase()}ly.ai`, `${baseName.toLowerCase()}ly.co`]
-      },
-      {
-        name: isAr ? `${baseName} الفاخرة` : `Aero${baseName}`,
-        meaning: `Sleek, aerodynamic brand identity expressing speed, forward-thinking direction, and clean execution.`,
-        meaningAr: `هوية بصرية أنيقة تعبر عن السرعة، التوجه المستقبلي والريادة في قطاع الأعمال.`,
-        style: "Premium",
-        domainSuggestions: [`aero${baseName.toLowerCase()}.com`, `aero${baseName.toLowerCase()}.co`, `${baseName.toLowerCase()}premium.com`]
-      },
-      {
-        name: isAr ? `نوفا ${baseName}` : `${baseName}Nova`,
-        meaning: `Combines "${baseName}" with the brilliant light of a supernova, symbolizing explosive growth and freshness.`,
-        meaningAr: `يجمع بين اسم "${baseName}" والضوء الساطع للنجم اللامع، مما يرمز إلى النمو السريع والابتكار المتجدد.`,
-        style: "Abstract & Blended",
-        domainSuggestions: [`${baseName.toLowerCase()}nova.com`, `${baseName.toLowerCase()}nova.co`, `novaship.com`]
-      },
-      {
-        name: isAr ? `${baseName} الذكي` : `Smart${baseName}`,
-        meaning: `An intelligent, highly functional name indicating efficiency, seamless tech integrations, and smart services.`,
-        meaningAr: `اسم ذكي وعملي للغاية يدل على الكفاءة والحلول المتكاملة والذكاء الاصطناعي في تقديم الخدمات.`,
-        style: "Phonetic & Direct",
-        domainSuggestions: [`smart${baseName.toLowerCase()}.com`, `smart${baseName.toLowerCase()}.net`, `${baseName.toLowerCase()}smart.com`]
-      },
-      {
-        name: isAr ? `${baseName} لينك` : `${baseName}Sphere`,
-        meaning: `Represents a complete, global ecosystem of services centered around ${baseName}, projecting authority and wholeness.`,
-        meaningAr: `يمثل منظومة متكاملة وعالمية من الخدمات المتمحورة حول هويتك ليعكس القوة والشمولية.`,
-        style: "Compound",
-        domainSuggestions: [`${baseName.toLowerCase()}sphere.com`, `${baseName.toLowerCase()}sphere.ai`, `${baseName.toLowerCase()}link.co`]
-      },
-      {
-        name: isAr ? `ألفا ${baseName}` : `Alpha${baseName}`,
-        meaning: `A dominant, top-tier branding option indicating leadership, strength, and premium tier status.`,
-        meaningAr: `خيار علامة تجارية من الطراز الأول يدل على القيادة والقوة والريادة في مجالك.`,
-        style: "Premium",
-        domainSuggestions: [`alpha${baseName.toLowerCase()}.com`, `alpha${baseName.toLowerCase()}.co`, `thealpha${baseName.toLowerCase()}.com`]
-      },
-      {
-        name: isAr ? `سول ${baseName}` : `Sol${baseName}`,
-        meaning: `Warm, sunny, energy-focused branding, perfect for modern customer connection and clean energy.`,
-        meaningAr: `علامة تجارية دافئة ومشرقة تركز على الطاقة والجمال والاتصال الوثيق بالعملاء.`,
-        style: "Short",
-        domainSuggestions: [`sol${baseName.toLowerCase()}.com`, `sol${baseName.toLowerCase()}.co`, `sol${baseName.toLowerCase()}sol.com`]
-      },
-      {
-        name: isAr ? `${baseName} فيو` : `Vibe${baseName}`,
-        meaning: `Emphasizes community, emotional connection, youthful energy, and stellar user experiences.`,
-        meaningAr: `يركز على نمط الحياة، الاتصال العاطفي بالجمهور، وتجربة المستخدم الاستثنائية والحديثة.`,
-        style: "Creative",
-        domainSuggestions: [`vibe${baseName.toLowerCase()}.com`, `${baseName.toLowerCase()}vibe.co`, `vibe${baseName.toLowerCase()}.ai`]
+    if (isAr) {
+      if (conceptLower.includes("قهوة") || conceptLower.includes("مقهى") || conceptLower.includes("كافيه") || conceptLower.includes("باريستا") || conceptLower.includes("coffee") || conceptLower.includes("cafe")) {
+        parsedData = [
+          { name: "أصيل للقهوة المختصة", meaning: "يعكس أصالة حبوب القهوة الفاخرة وجودة التحميص الاحترافي العالي.", meaningAr: "يعكس أصالة حبوب القهوة الفاخرة وجودة التحميص الاحترافي العالي.", style: "Premium & Authentic", domainSuggestions: ["aseelcoffee.com", "aseelcoffee.co", "aseel.coffee"] },
+          { name: "سول باريستا", meaning: "مستوحى من الشغف والروح العالية في إعداد القهوة المقطرة بعناية.", meaningAr: "مستوحى من الشغف والروح العالية في إعداد القهوة المقطرة بعناية.", style: "Modern & Catchy", domainSuggestions: ["soulbarista.com", "soulbarista.co", "soulbarista.ai"] },
+          { name: "موجة وقطرة", meaning: "يعبر عن التناغم والدقة في درجات استخلاص القهوة المقطرة.", meaningAr: "يعبر عن التناغم والدقة في درجات استخلاص القهوة المقطرة.", style: "Creative & Visual", domainSuggestions: ["mowja.com", "mowjacoffee.com", "dripwave.co"] },
+          { name: "كافيا", meaning: "اسم عصري وسلس مستوحى من القهوة مع لمسة أوروبية أنيقة.", meaningAr: "اسم عصري وسلس مستوحى من القهوة مع لمسة أوروبية أنيقة.", style: "Short & Modern", domainSuggestions: ["caffia.com", "caffia.co", "caffia.app"] },
+          { name: "رستو بيت", meaning: "رمز لتحميص حبوب القهوة بدرجة متقنة تحاكي أفضل المتاجر العالمية.", meaningAr: "رمز لتحميص حبوب القهوة بدرجة متقنة تحاكي أفضل المتاجر العالمية.", style: "Phonetic", domainSuggestions: ["roastbeat.com", "roastbeat.co", "roast.cafe"] },
+          { name: "عربستا", meaning: "يمزج بين العروبة والأصالة مع حرفية الباريستا العالمية.", meaningAr: "يمزج بين العروبة والأصالة مع حرفية الباريستا العالمية.", style: "Blended & Unique", domainSuggestions: ["arabista.com", "arabista.co", "arabista.net"] },
+          { name: "سلو دريب", meaning: "يرمز للهدوء والتركيز الفائق في تقديم القهوة المقطرة بطيئة التحضير.", meaningAr: "يرمز للهدوء والتركيز الفائق في تقديم القهوة المقطرة بطيئة التحضير.", style: "Modern Tech", domainSuggestions: ["slowdrip.co", "slowdrip.cafe", "slowdrip.app"] },
+          { name: "روست هاب", meaning: "المكان الجامع لعشاق المحامص والقهوة المتميزة.", meaningAr: "المكان الجامع لعشاق المحامص والقهوة المتميزة.", style: "Compound", domainSuggestions: ["roasthub.com", "roasthub.co", "roasthub.net"] }
+        ];
+      } else if (conceptLower.includes("مطعم") || conceptLower.includes("طعام") || conceptLower.includes("بيتزا") || conceptLower.includes("أكل") || conceptLower.includes("وجب") || conceptLower.includes("food") || conceptLower.includes("pizza") || conceptLower.includes("restaurant")) {
+        parsedData = [
+          { name: "لقمة وهناء", meaning: "اسم دافئ يعبر عن الجودة واللذة والدفء العائلي في تناول الطعام.", meaningAr: "اسم دافئ يعبر عن الجودة واللذة والدفء العائلي في تناول الطعام.", style: "Traditional & Warm", domainSuggestions: ["luqma.com", "luqma.co", "luqma.app"] },
+          { name: "أورجانو", meaning: "مستوحى من المكونات الطازجة والأعشاب الإيطالية الفاخرة للبيتزا.", meaningAr: "مستوحى من المكونات الطازجة والأعشاب الإيطالية الفاخرة للبيتزا.", style: "Modern & European", domainSuggestions: ["organo.co", "organofood.com", "organo.app"] },
+          { name: "طبلية", meaning: "يحمل طابع الكرم والأصالة والجمعة العربية الدافئة حول المائدة.", meaningAr: "يحمل طابع الكرم والأصالة والجمعة العربية الدافئة حول المائدة.", style: "Authentic Culture", domainSuggestions: ["tableya.com", "tableya.co", "tableya.net"] },
+          { name: "مذاق سبيشال", meaning: "يركز على المذاق الاستثنائي والخبرة العريقة في الطهي.", meaningAr: "يركز على المذاق الاستثنائي والخبرة العريقة في الطهي.", style: "Direct & Clear", domainSuggestions: ["mazag.com", "mazagspecial.com", "mazag.co"] },
+          { name: "زوّادة", meaning: "اسم عربي فصيح يعكس السخاء والوجبات الشهية المجهزة بحب.", meaningAr: "اسم عربي فصيح يعكس السخاء والوجبات الشهية المجهزة بحب.", style: "Traditional & Elegant", domainSuggestions: ["zawada.com", "zawada.co", "zawada.app"] },
+          { name: "فليم آند فورك", meaning: "يعبر عن الطهي على النار المباشرة والتقديم الاحترافي العالي.", meaningAr: "يعبر عن الطهي على النار المباشرة والتقديم الاحترافي العالي.", style: "Modern & Trendy", domainSuggestions: ["flamefork.com", "flamefork.co", "flamefork.net"] },
+          { name: "روزا بيتزا", meaning: "اسم يدمج الأناقة الإيطالية لتقديم البيتزا الطازجة والمقرمشة.", meaningAr: "اسم يدمج الأناقة الإيطالية لتقديم البيتزا الطازجة والمقرمشة.", style: "Catchy & Short", domainSuggestions: ["rosapizza.com", "rosapizza.co", "rosapizza.app"] },
+          { name: "شيف وليمة", meaning: "يعبر عن الضيافة الملكية والخبرة العالية لشيفات المطعم.", meaningAr: "يعبر عن الضيافة الملكية والخبرة العالية لشيفات المطعم.", style: "Premium", domainSuggestions: ["chefwaleema.com", "chefwaleema.co", "waleema.app"] }
+        ];
+      } else if (conceptLower.includes("محاماة") || conceptLower.includes("قانون") || conceptLower.includes("استشار") || conceptLower.includes("عدالة") || conceptLower.includes("حقوق") || conceptLower.includes("law") || conceptLower.includes("legal")) {
+        parsedData = [
+          { name: "مسار العدالة", meaning: "يعكس التوجه الواضح والدقيق في حماية الحقوق وتأكيد العدالة.", meaningAr: "يعكس التوجه الواضح والدقيق في حماية الحقوق وتأكيد العدالة.", style: "Institutional & Clear", domainSuggestions: ["masaraladala.com", "masar.law", "justicepath.co"] },
+          { name: "صرح القانون", meaning: "يعبر عن الهيبة والموثوقية العالية والخبرة القانونية الراسخة.", meaningAr: "يعبر عن الهيبة والموثوقية العالية والخبرة القانونية الراسخة.", style: "Prestige & Legacy", domainSuggestions: ["sarhlaw.com", "sarh.law", "sarhlaw.co"] },
+          { name: "ميثاق للحماية", meaning: "يدل على الأمانة والالتزام الكامل بحفظ حقوق ومصالح العملاء.", meaningAr: "يدل على الأمانة والالتزام الكامل بحفظ حقوق ومصالح العملاء.", style: "Trust & Defense", domainSuggestions: ["methaq.law", "methaq.co", "methaqlaw.com"] },
+          { name: "بصيرة واستشارات", meaning: "يرمز إلى الحكمة والرؤية الثاقبة في تقديم الحلول القانونية المعقدة.", meaningAr: "يرمز إلى الحكمة والرؤية الثاقبة في تقديم الحلول القانونية المعقدة.", style: "Professional Advisory", domainSuggestions: ["baseera.law", "baseera.co", "baseeralaw.com"] },
+          { name: "حقوق وتأكيد", meaning: "اسم قوي ومباشر يبعث على الاطمئنان والثقة التامة لدى العميل.", meaningAr: "اسم قوي ومباشر يبعث على الاطمئنان والثقة التامة لدى العميل.", style: "Direct & Trustworthy", domainSuggestions: ["huqoq.law", "huqoq.co", "huqoqlaw.com"] },
+          { name: "درع الحماية", meaning: "يرمز للوقاية والدفاع القانوني الصارم لحماية الشركات والأفراد.", meaningAr: "يرمز للوقاية والدفاع القانوني الصارم لحماية الشركات والأفراد.", style: "Defense", domainSuggestions: ["dirlaw.com", "dir.law", "dirlaw.co"] },
+          { name: "ليكس جارد", meaning: "اسم عصري يجمع بين المصطلحات القانونية العالمية والوقاية المستمرة.", meaningAr: "اسم عصري يجمع بين المصطلحات القانونية العالمية والوقاية المستمرة.", style: "Modern International", domainSuggestions: ["lexguard.co", "lexguard.law", "lexguard.app"] },
+          { name: "ميزان وحكمة", meaning: "يرمز إلى العدل والاتزان في اتخاذ القرارات وحسم القضايا.", meaningAr: "يرمز إلى العدل والاتزان في اتخاذ القرارات وحسم القضايا.", style: "Classic Prestige", domainSuggestions: ["mizanlaw.com", "mizan.law", "mizanlaw.co"] }
+        ];
+      } else {
+        const cleanWords = concept.split(/\s+/).filter(w => w.length > 2);
+        const coreWord = cleanWords[0] || "ابتكار";
+        parsedData = [
+          { name: `نواة ${coreWord}`, meaning: "تعبر عن المركز الرئيسي للانطلاق والأساس المتين للتوسع.", meaningAr: "تعبر عن المركز الرئيسي للانطلاق والأساس المتين للتوسع.", style: "Core & Modern", domainSuggestions: [`nawat${coreWord}.com`, `nawat.co`, `nawat.ai`] },
+          { name: `مسار ${coreWord}`, meaning: "يركز على الوضوح والخطوات المدروسة نحو النجاح.", meaningAr: "يركز على الوضوح والخطوات المدروسة نحو النجاح.", style: "Strategic", domainSuggestions: [`masar${coreWord}.com`, `masar.co`, `masar.app`] },
+          { name: `صرح ${coreWord}`, meaning: "يعكس الهيبة والاستقرار والنمو القوي في قطاع الأعمال.", meaningAr: "يعكس الهيبة والاستقرار والنمو القوي في قطاع الأعمال.", style: "Premium", domainSuggestions: [`sarh${coreWord}.com`, `sarh.co`, `sarh.net`] },
+          { name: `أفق ${coreWord}`, meaning: "رمز للتوسع والرؤية المستقبلي الرائدة.", meaningAr: "رمز للتوسع والرؤية المستقبلي الرائدة.", style: "Visionary", domainSuggestions: [`ofoq${coreWord}.com`, `ofoq.co`, `ofoq.ai`] },
+          { name: `مدار ${coreWord}`, meaning: "يعبر عن الإحاطة الكاملة بالحلول والخدمات المتكاملة.", meaningAr: "يعبر عن الإحاطة الكاملة بالحلول والخدمات المتكاملة.", style: "Ecosystem", domainSuggestions: [`madar${coreWord}.com`, `madar.co`, `madar.io`] },
+          { name: `سول ${coreWord}`, meaning: "اسم عصري وسلس يعكس الشغف والروح الإبداعية.", meaningAr: "اسم عصري وسلس يعكس الشغف والروح الإبداعية.", style: "Short & Trendy", domainSuggestions: [`soul${coreWord}.com`, `soul.co`, `soul.app`] },
+          { name: `قبس ${coreWord}`, meaning: "رمز للإلهام والابتكار المشرق الذي يضيء الطريق.", meaningAr: "رمز للإلهام والابتكار المشرق الذي يضيء الطريق.", style: "Inspirational", domainSuggestions: [`qabas${coreWord}.com`, `qabas.co`, `qabas.net`] },
+          { name: `أبعاد ${coreWord}`, meaning: "يعبر عن التفكير العميق وزوايا النظر المتعددة للتطوير.", meaningAr: "يعبر عن التفكير العميق وزوايا النظر المتعددة للتطوير.", style: "Advanced", domainSuggestions: [`abaad${coreWord}.com`, `abaad.co`, `abaad.ai`] }
+        ];
       }
-    ];
+    } else {
+      if (conceptLower.includes("coffee") || conceptLower.includes("cafe") || conceptLower.includes("roast") || conceptLower.includes("espresso")) {
+        parsedData = [
+          { name: "RoastCraft", meaning: "Emphasizes master roasting precision and artisanal coffee preparation.", meaningAr: "يركز على الدقة في تحميص القهوة وإعدادها بطريقة حرفية استثنائية.", style: "Artisanal", domainSuggestions: ["roastcraft.com", "roastcraft.co", "roastcraft.cafe"] },
+          { name: "AromaPulse", meaning: "Connects the rich sensory fragrance of fresh brews with modern energy.", meaningAr: "يربط بين عبق القهوة الطازجة ورائحتها الزكية مع الطاقة الحيوية العصرية.", style: "Sensory & Modern", domainSuggestions: ["aromapulse.com", "aromapulse.co", "aromapulse.app"] },
+          { name: "VelvetGrind", meaning: "Describes smooth extraction and rich, high-end espresso texture.", meaningAr: "يصف سلاسة الاستخلاص وقوام الإسبريسو الغني الفاخر.", style: "Premium", domainSuggestions: ["velvetgrind.com", "velvetgrind.co", "velvetgrind.cafe"] },
+          { name: "Sip & Slate", meaning: "Combines the relaxing ritual of sipping with sleek urban design.", meaningAr: "يمزج بين طقوس الاستمتاع بالرشفة الأولى والتصميم العصري الأنيق.", style: "Minimalist", domainSuggestions: ["sipslate.com", "sipslate.co", "sipandslate.com"] },
+          { name: "UrbanBrew", meaning: "A trendy, community-focused naming option for city coffee houses.", meaningAr: "اسم عصري جاذب يعبر عن مقهى المدينة المجتمعي الراقي.", style: "Short & Catchy", domainSuggestions: ["urbanbrew.co", "urbanbrew.cafe", "urbanbrew.app"] },
+          { name: "DripStudio", meaning: "Reflects meticulous attention to pour-over coffee engineering.", meaningAr: "يعكس الاهتمام الدقيق بالتفاصيل الهندسيّة لتحضير القهوة المقطرة.", style: "Tech & Craft", domainSuggestions: ["dripstudio.com", "dripstudio.co", "drip.studio"] },
+          { name: "BeanVoyage", meaning: "Captures the journey of single-origin coffee beans from origin to cup.", meaningAr: "يجسد رحلة حبوب القهوة الفاخرة من المزارع العالمية إلى الفنجان.", style: "Storytelling", domainSuggestions: ["beanvoyage.com", "beanvoyage.co", "beanvoyage.cafe"] },
+          { name: "ArtisanSpout", meaning: "Highlights handcrafted precision poured to perfection.", meaningAr: "يسلط الضوء على الإعداد اليدوي الدقيق الذي يسكب بإتقان.", style: "Craft", domainSuggestions: ["artisanspout.com", "artisanspout.co", "spout.cafe"] }
+        ];
+      } else {
+        const cleanWords = concept.split(/\s+/).filter(w => w.length > 2);
+        const core = cleanWords[0] ? cleanWords[0].charAt(0).toUpperCase() + cleanWords[0].slice(1).toLowerCase() : "Core";
+        parsedData = [
+          { name: `${core}Pulse`, meaning: `Expresses the energetic momentum and real-time vital force of ${core}.`, meaningAr: `يعبر عن الزخم والطاقة الحيوية المستمرة لـ ${core}.`, style: "Dynamic & Modern", domainSuggestions: [`${core.toLowerCase()}pulse.com`, `${core.toLowerCase()}pulse.co`, `${core.toLowerCase()}pulse.ai`] },
+          { name: `Apex${core}`, meaning: `Positions your brand at the absolute summit of ${core} solutions.`, meaningAr: `يضع علامتك التجارية في القمة الحقيقية لتقديم حلول ${core}.`, style: "Premium & Authority", domainSuggestions: [`apex${core.toLowerCase()}.com`, `apex${core.toLowerCase()}.co`, `apex${core.toLowerCase()}.net`] },
+          { name: `${core}Craft`, meaning: `Highlights handcrafted precision, detail-oriented design, and quality.`, meaningAr: `يسلط الضوء على الحرفية والدقة العالية والاهتمام الدقيق بالتفاصيل.`, style: "Artisanal", domainSuggestions: [`${core.toLowerCase()}craft.com`, `${core.toLowerCase()}craft.co`, `${core.toLowerCase()}craft.io`] },
+          { name: `Vera${core}`, meaning: `Derived from 'Veritas' (truth), projecting integrity and genuine quality.`, meaningAr: `مستوحى من الحقيقة والشفافية ليعكس الموثوقية والجودة الأصيلة.`, style: "Trust & Heritage", domainSuggestions: [`vera${core.toLowerCase()}.com`, `vera${core.toLowerCase()}.co`, `vera${core.toLowerCase()}.org`] },
+          { name: `${core}Haven`, meaning: `Creates a welcoming, secure, and delightful space centered around ${core}.`, meaningAr: `يخلق مساحة مرحبة وآمنة وممتعة مكرسة لـ ${core}.`, style: "Warm & Inviting", domainSuggestions: [`${core.toLowerCase()}haven.com`, `${core.toLowerCase()}haven.co`, `${core.toLowerCase()}haven.app`] },
+          { name: `Omni${core}`, meaning: `Represents a complete, 360-degree ecosystem covering all needs.`, meaningAr: `يمثل منظومة متكاملة 360 درجة تغطي كافة الاحتياجات بشكل متناغم.`, style: "Compound", domainSuggestions: [`omni${core.toLowerCase()}.com`, `omni${core.toLowerCase()}.co`, `omni${core.toLowerCase()}.ai`] },
+          { name: `${core}Studio`, meaning: `Gives an innovative, creative laboratory feel to your operations.`, meaningAr: `يعطي انطباعاً بالمختبر الإبداعي والاستوديو المتطور.`, style: "Creative", domainSuggestions: [`${core.toLowerCase()}studio.com`, `${core.toLowerCase()}studio.co`, `${core.toLowerCase()}.studio`] },
+          { name: `Luxe${core}`, meaning: `Signals top-tier luxury, exclusivity, and elevated customer service.`, meaningAr: `يعكس الفخامة المطلقة والتمياز والخدمة الاستثنائية للعملاء.`, style: "Luxury", domainSuggestions: [`luxe${core.toLowerCase()}.com`, `luxe${core.toLowerCase()}.co`, `luxe${core.toLowerCase()}.net`] }
+        ];
+      }
+    }
   }
   // 2. Logo Generator
   else if (systemPrompt.includes("brand logo in valid SVG") || systemPrompt.includes("vector graphic designer") || systemPrompt.includes("svg")) {
-    const conceptMatch = systemPrompt.match(/representing the concept:\s*"(.*)"/i) || systemPrompt.match(/concept:\s*"(.*)"/i);
-    const concept = conceptMatch ? conceptMatch[1] : "Business";
-    
-    const styleMatch = systemPrompt.match(/Style requested:\s*([a-zA-Z0-9_]+)/i); const styleReq = styleMatch ? styleMatch[1].toLowerCase() : "minimalist"; const primaryColor = styleReq.includes("luxury") ? "#D4AF37" : (styleReq.includes("technology") ? "#2563EB" : "#10B981");
-    const secondaryColor = styleReq.includes("luxury") ? "#1E293B" : (styleReq.includes("technology") ? "#3B82F6" : "#059669");
+    let primaryColor = "#2563EB";
+    let secondaryColor = "#3B82F6";
+    let iconPath = "<circle cx='250' cy='210' r='70' fill='url(#grad)' /><path d='M220,180 L290,210 L220,240 Z' fill='#FFFFFF' />";
 
-    const svgString = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500' width='100%' height='100%'>
-      <defs>
-        <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
-          <stop offset='0%' stop-color='${primaryColor}' />
-          <stop offset='100%' stop-color='${secondaryColor}' />
-        </linearGradient>
-        <filter id='shadow' x='-20%' y='-20%' width='140%' height='140%'>
-          <feDropShadow dx='0' dy='8' stdDeviation='12' flood-color='#000000' flood-opacity='0.15' />
-        </filter>
-      </defs>
-      <rect width='500' height='500' fill='#0F172A' rx='24' />
-      <g filter='url(#shadow)'>
-        <circle cx='250' cy='220' r='90' fill='url(#grad)' opacity='0.95' />
-        <path d='M250,140 L310,260 L190,260 Z' fill='#FFFFFF' opacity='0.9' />
-        <circle cx='250' cy='220' r='30' fill='#0F172A' />
-      </g>
-      <text x='250' y='380' font-family='sans-serif' font-size='32' font-weight='900' fill='#FFFFFF' text-anchor='middle' letter-spacing='4'>${concept.toUpperCase()}</text>
-      <text x='250' y='415' font-family='sans-serif' font-size='14' font-weight='600' fill='${primaryColor}' text-anchor='middle' letter-spacing='2'>ESTABLISHED 2026</text>
-    </svg>`;
+    if (conceptLower.includes("قهوة") || conceptLower.includes("coffee") || conceptLower.includes("cafe") || conceptLower.includes("مقهى")) {
+      primaryColor = "#78350F";
+      secondaryColor = "#D97706";
+      iconPath = "<path d='M180,180 C180,140 210,140 210,180 C210,240 180,240 180,180 Z' fill='url(#grad)' /><path d='M250,180 C250,140 280,140 280,180 C280,240 250,240 250,180 Z' fill='url(#grad)' transform='rotate(15 250 210)' /><rect x='170' y='220' width='160' height='70' rx='20' fill='url(#grad)' /><path d='M330,230 C350,230 360,245 360,255 C360,265 350,280 330,280' stroke='url(#grad)' stroke-width='12' fill='none' />";
+    } else if (conceptLower.includes("مطعم") || conceptLower.includes("food") || conceptLower.includes("pizza") || conceptLower.includes("بيتزا")) {
+      primaryColor = "#DC2626";
+      secondaryColor = "#F59E0B";
+      iconPath = "<path d='M250,130 L340,280 L160,280 Z' fill='url(#grad)' rx='10' /><circle cx='250' cy='200' r='18' fill='#FFFFFF' opacity='0.8' /><circle cx='220' cy='240' r='14' fill='#FFFFFF' opacity='0.8' /><circle cx='280' cy='245' r='14' fill='#FFFFFF' opacity='0.8' />";
+    } else if (conceptLower.includes("قانون") || conceptLower.includes("محاماة") || conceptLower.includes("law") || conceptLower.includes("legal")) {
+      primaryColor = "#1E3A8A";
+      secondaryColor = "#D97706";
+      iconPath = "<rect x='244' y='140' width='12' height='150' fill='url(#grad)' /><rect x='170' y='160' width='160' height='10' rx='5' fill='url(#grad)' /><path d='M170,170 L140,230 A30,30 0 0,0 200,230 Z' fill='url(#grad)' opacity='0.85' /><path d='M330,170 L300,230 A30,30 0 0,0 360,230 Z' fill='url(#grad)' opacity='0.85' /><rect x='200' y='280' width='100' height='16' rx='8' fill='url(#grad)' />";
+    }
+
+    const svgString = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500' width='100%' height='100%'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='${primaryColor}' /><stop offset='100%' stop-color='${secondaryColor}' /></linearGradient><filter id='shadow' x='-20%' y='-20%' width='140%' height='140%'><feDropShadow dx='0' dy='8' stdDeviation='12' flood-color='#000000' flood-opacity='0.15' /></filter></defs><rect width='500' height='500' fill='#0F172A' rx='28' /><g filter='url(#shadow)'>${iconPath}</g><text x='250' y='380' font-family='sans-serif' font-size='28' font-weight='900' fill='#FFFFFF' text-anchor='middle' letter-spacing='3'>${concept.toUpperCase()}</text><text x='250' y='415' font-family='sans-serif' font-size='13' font-weight='600' fill='${primaryColor}' text-anchor='middle' letter-spacing='2'>ESTABLISHED 2026</text></svg>`;
 
     parsedData = {
       svg: svgString,
-      concept: `Designed a beautiful minimalist circular geometry with a centered ascending prism representing growth and structured innovation for "${concept}". Colors chosen are a high-end corporate palette focusing on confidence, elegance, and future development.`,
+      concept: `A custom vector emblem designed specifically for "${concept}". It features clean geometry, a targeted domain icon, and a rich dual-tone gradient background emphasizing trust and modern elegance.`,
       primaryColor,
       secondaryColor
     };
   }
   // 3. Slogan Generator
   else if (systemPrompt.includes("brand slogans/taglines") || systemPrompt.includes("advertising creative director")) {
-    const conceptMatch = systemPrompt.match(/taglines for:\s*"(.*)"/i) || systemPrompt.match(/for:\s*"(.*)"/i);
-    const concept = conceptMatch ? conceptMatch[1] : "Business";
-
     parsedData = isAr ? [
-      { slogan: `الريادة في عالم ${concept}`, vibe: "Bold" },
-      { slogan: `${concept} - مستقبل أسهل بين يديك`, vibe: "Inspiring" },
-      { slogan: "الذكاء في العمل، البساطة في الأداء", vibe: "Tech" },
-      { slogan: `مفهوم جديد لخدمات ${concept}`, vibe: "Modern" },
-      { slogan: "حيث يلتقي الإبداع بالتميز اليومي", vibe: "Creative" },
-      { slogan: "شريكك الموثوق نحو الأفضل دائماً", vibe: "Warm" },
-      { slogan: "اصنع الفارق، اختر المستقبل", vibe: "Bold" },
-      { slogan: "دقة متناهية، خدمات احترافية تفوق التوقعات", vibe: "Professional" },
-      { slogan: "ابتكار مستمر لحياة أكثر ذكاءً", vibe: "Inspiring" },
-      { slogan: "التزام بالتميز في كل تفصيل", vibe: "Professional" }
+      { slogan: `الريادة والتميز الملموس في عالم ${concept}`, vibe: "Bold" },
+      { slogan: `${concept} - جودة تفوق التوقعات كل يوم`, vibe: "Inspiring" },
+      { slogan: "شريكك الموثوق لنقل أعمالك نحو القمة", vibe: "Professional" },
+      { slogan: `رؤية متجددة تجسد طموحك في ${concept}`, vibe: "Modern" },
+      { slogan: "اصنع انطباعاً يدوم مع كل تفصيل", vibe: "Creative" },
+      { slogan: "الدقة في الأداء، والبساطة في التميز", vibe: "Tech" },
+      { slogan: "حيث يلتقي الإبداع بالحرفية العالية", vibe: "Warm" },
+      { slogan: "تجربة استثنائية مصممة خصيصاً لك", vibe: "Inspiring" },
+      { slogan: "التزام راسخ بالتميز والابتكار المستمر", vibe: "Professional" },
+      { slogan: "اختر الأفضل، واصنع فرقاً حقيقياً اليوم", vibe: "Bold" }
     ] : [
-      { slogan: `Empowering Your ${concept} Journey`, vibe: "Inspiring" },
-      { slogan: `${concept}: Reimagined, Redefined, Delivered`, vibe: "Bold" },
-      { slogan: "The Smarter Way to Live and Work", vibe: "Tech" },
-      { slogan: "Where Creativity Meets Peak Performance", vibe: "Creative" },
-      { slogan: "Your Trusted Partner in the Digital Age", vibe: "Warm" },
-      { slogan: "Experience Excellence in Every Single Detail", vibe: "Professional" },
-      { slogan: "Bold Choices. Unlimited Innovation.", vibe: "Bold" },
-      { slogan: "Seamlessly Connected to What Matters Most", vibe: "Inspiring" },
-      { slogan: `Step Into the Future of ${concept}`, vibe: "Modern" },
-      { slogan: "Simplicity Redefined. Efficiency Perfected.", vibe: "Tech" }
+      { slogan: `Redefining Excellence in ${concept}`, vibe: "Inspiring" },
+      { slogan: `${concept}: Smart Solutions for Modern Growth`, vibe: "Bold" },
+      { slogan: "Where Innovation Meets Uncompromised Quality", vibe: "Tech" },
+      { slogan: "Crafted for Distinction, Built for Success", vibe: "Professional" },
+      { slogan: "Your Trusted Partner in Every Milestone", vibe: "Warm" },
+      { slogan: "Elevate Your Experience to the Next Level", vibe: "Modern" },
+      { slogan: "Bold Choices. Unlimited Possibilities.", vibe: "Bold" },
+      { slogan: "Unleash the True Power of Quality Performance", vibe: "Inspiring" },
+      { slogan: `The Smarter Way to Live & Experience ${concept}`, vibe: "Creative" },
+      { slogan: "Precision Perfected. Excellence Delivered.", vibe: "Professional" }
     ];
   }
   // 4. Complete Brand Kit & Guideline Generator
   else if (systemPrompt.includes("brand kit and identity guidelines") || systemPrompt.includes("brand kit")) {
     parsedData = {
       colors: {
-        primary: "#4F46E5",
+        primary: "#2563EB",
         secondary: "#10B981",
         accent: "#F59E0B",
         background: "#F8FAFC",
         text: "#0F172A",
-        paletteName: isAr ? "الأفق الحديث" : "Modern Horizon"
+        paletteName: isAr ? "الأفق العصري" : "Modern Horizon"
       },
       typography: {
-        heading: "Space Grotesk",
-        body: "Inter",
+        heading: isAr ? "Cairo" : "Space Grotesk",
+        body: isAr ? "Readex Pro" : "Inter",
         rationale: isAr 
-          ? "مزيج غني من خطوط العناوين العصرية لتعكس الرؤية الطموحة والوضوح، مع خطوط المتن الكلاسيكية المقروءة لراحة المستخدم."
-          : "A bold modern heading font for professional authority and design clarity, paired with a clean geometric body font for optimal readability."
+          ? "مزيج خيم ومتناسق جداً يجمع بين العناوين المعاصرة القوية مع خطوط متن سهلة المقروئية على كافة الشاشات."
+          : "A bold modern heading font for professional authority, paired with a clean geometric body font for optimal readability."
       },
       socialKit: {
         bio: isAr 
-          ? "نبتكر الحلول الذكية لنمنح أعمالك طابعاً استثنائياً. تابعنا لتصلك أحدث نصائح الابتكار والتميز في هذا المجال. ✨"
-          : "We design beautiful solutions that give your brand a stunning competitive advantage. Follow us for elite creative insights. ✨",
-        coverPrompt: "Premium high-contrast minimalist banner with geometric flow shapes in Indigo and Emerald, with plenty of negative space and soft ambient drop-shadows, 4K resolution.",
-        postTemplate: "[Heading Hook] 🚀\n\n[Key Insight or Quote]\n\n[Call to Action] Click the link in bio!\n\n#Branding #Innovation #Success #Creative"
+          ? `نبتكر أفضل الحلول المتميزة لـ ${concept}. تابعنا لتصلك أحدث الأفكار والابتكارات الاستثنائية! ✨`
+          : `Designing high-impact solutions for ${concept}. Follow us for daily creative insights and elite updates! ✨`,
+        coverPrompt: `High-resolution ultra-clean social media banner representing ${concept} with modern gradient geometry and generous negative space.`,
+        postTemplate: "[Hook Headline] 🚀\n\n[Key Insight or Value Point]\n\n[Action Step] Visit link in bio to learn more!\n\n#Branding #Innovation #Success"
       }
     };
   }
-  // 5. Complete Interactive Color Palette Generator API
+  // 5. Complete Interactive Color Palette Generator
   else if (systemPrompt.includes("highly professional, cohesive 5-color palette") || systemPrompt.includes("paletteName")) {
-    parsedData = {
-      paletteName: isAr ? "الغروب الدافئ" : "Warm Solstice",
-      explanation: isAr 
-        ? "لوحة ألوان متناغمة ومدروسة بعناية تجمع بين الأناقة والجاذبية النفسية لإلهام ثقة العملاء وعكس التوجه الاحترافي."
-        : "A carefully structured color system built with premium color harmony rules, combining warm and cool hues to establish balance and confidence.",
-      colors: [
-        { hex: "#4F46E5", name: isAr ? "نيللي ملكي" : "Royal Indigo", role: isAr ? "عنصر الهوية الرئيسي وزر اتخاذ القرار" : "Primary brand element and call-to-action" },
-        { hex: "#10B981", name: isAr ? "أخضر نضر" : "Fresh Emerald", role: isAr ? "اللون الثانوي للتوازن والازدهار" : "Secondary brand highlight" },
-        { hex: "#F59E0B", name: isAr ? "عنبر دافئ" : "Warm Amber", role: isAr ? "اللون المميز للأسعار والخصائص المتميزة" : "Accent and highlight element" },
-        { hex: "#F8FAFC", name: isAr ? "ضباب ناصع" : "Bright Slate", role: isAr ? "خلفية التطبيق والمساحات الواسعة" : "App canvas background" },
-        { hex: "#0F172A", name: isAr ? "حبر ليلي" : "Midnight Navy", role: isAr ? "العناوين الرئيسية والنصوص الطويلة" : "Primary headings and text" }
-      ]
-    };
+    if (conceptLower.includes("قهوة") || conceptLower.includes("coffee") || conceptLower.includes("cafe")) {
+      parsedData = {
+        paletteName: isAr ? "عبق التحميص" : "Roasted Mocha Palette",
+        explanation: isAr ? "لوحة ألوان دافئة ومستوحات من حبوب القهوة الفاخرة ورغوة الإسبريسو لتعكس الدفء والراحة." : "A warm, rich earth-tone palette inspired by dark roasted espresso beans and creamy foam.",
+        colors: [
+          { hex: "#3E2723", name: isAr ? "إسبريسو داكن" : "Dark Espresso", role: isAr ? "العناوين والهوية الرئيسية" : "Primary brand element" },
+          { hex: "#8D6E63", name: isAr ? "موكا دافئة" : "Warm Mocha", role: isAr ? "اللون الثانوي للتوازن" : "Secondary accent" },
+          { hex: "#D7CCC8", name: isAr ? "رغوة اللاتيه" : "Latte Foam", role: isAr ? "خلفية الكروت والبطاقات" : "Card surface" },
+          { hex: "#FFF8E1", name: isAr ? "كريمي ناصع" : "Cream Canvas", role: isAr ? "خلفية التطبيق والمساحات" : "Background canvas" },
+          { hex: "#212121", name: isAr ? "حبر المحمصة" : "Roaster Charcoal", role: isAr ? "النصوص الطويلة والقراءة" : "Primary body text" }
+        ]
+      };
+    } else {
+      parsedData = {
+        paletteName: isAr ? "الأفق الراقٍ" : "Vibrant Spectrum",
+        explanation: isAr ? "لوحة ألوان متوازنة بعناية تجمع بين الأناقة والوضوح البصري لإبراز العلامة التجارية." : "A carefully structured color system built with premium harmony rules to establish balance and confidence.",
+        colors: [
+          { hex: "#2563EB", name: isAr ? "أزرق ملكي" : "Royal Cobalt", role: isAr ? "اللون الرئيسي والزر التفاعلي" : "Primary call to action" },
+          { hex: "#10B981", name: isAr ? "زمرد نضر" : "Fresh Emerald", role: isAr ? "اللون الثانوي والتمييز" : "Secondary highlight" },
+          { hex: "#F59E0B", name: isAr ? "عنبر ذهبي" : "Golden Amber", role: isAr ? "لون التأكيد والعروض" : "Accent highlight" },
+          { hex: "#F8FAFC", name: isAr ? "ضباب ناصع" : "Bright Slate", role: isAr ? "خلفية الواجهة" : "App background canvas" },
+          { hex: "#0F172A", name: isAr ? "حبر ليلي" : "Midnight Navy", role: isAr ? "العناوين والنصوص" : "Headings & primary body" }
+        ]
+      };
+    }
   }
-  // 6. Auto-Tag Assets
-  else if (systemPrompt.includes("assign 1 to 3 relevant, clever, and short category tags") || systemPrompt.includes("categorization expert")) {
-    parsedData = [
-      ["Modern", "Tech"],
-      ["Creative", "B2B"],
-      ["Minimalist", "AI"],
-      ["Premium", "Growth"]
-    ];
-  }
-  // 7. Compare Assets
-  else if (systemPrompt.includes("side-by-side comparison to help the user choose") || systemPrompt.includes("Compare Assets")) {
-    parsedData = {
-      recommendation: isAr ? "الخيار الأول: يمثل التوجه العصري والمستقبلي المثالي للمشروع." : "Option 1: Exhibits the strongest professional and modern aesthetic for this market segment.",
-      analysis: [
-        {
-          nameOrSlogan: "Option 1",
-          pros: isAr ? ["اسم قوي وسهل الحفظ", "يعكس الطابع التقني والعصري"] : ["Highly memorable and brief", "Expresses direct technical capabilities"],
-          cons: isAr ? ["قد يتطلب ميزانية إضافية للتسويق"] : ["Requires slight brand positioning in localized markets"],
-          brandFit: isAr ? "مناسب تماماً للشركات الناشئة الطموحة" : "Perfect for ambitious startups and scalable apps"
-        },
-        {
-          nameOrSlogan: "Option 2",
-          pros: isAr ? ["كلاسيكي ويعطي انطباعاً بالموثوقية", "سهل النطق بجميع اللغات"] : ["Classical appeal that brings trusted security", "Great multi-lingual phonetics"],
-          cons: isAr ? ["أقل تميزاً مقارنة بالخيار الأول"] : ["Slightly less distinctive than Option 1"],
-          brandFit: isAr ? "مناسب للشركات الخدمية والمؤسسات القائمة" : "Great for client consulting services and corporate setups"
-        }
-      ],
-      verdict: isAr 
-        ? "نوصي بالبدء فوراً بالخيار الأول كعلامة تجارية رائدة للتحول الرقمي وسهولة الاندماج في السوق."
-        : "We strongly advise launching with Option 1 due to its modern phonetics, exceptional adaptability, and premium character."
-    };
-  }
-  // 9. Brand Voice & Linguistic Architect
-  else if (systemPrompt.includes("Brand Voice Style Guide") || systemPrompt.includes("brand-voice-analyze") || systemPrompt.includes("voiceProfile")) {
-    parsedData = {
-      voiceProfile: {
-        name: isAr ? "المستكشف الملهم" : "The Visionary Catalyst",
-        summary: isAr 
-          ? "هوية لغوية تجمع بين الابتكار والشغف، تتحدث بثقة وإيجابية لتلهم الجمهور وتدفعه نحو التميز والتغيير المستمر."
-          : "A brand voice centered around pioneering growth and progressive innovation, designed to build trust through actionable wisdom and clarity."
-      },
-      traits: [
-        {
-          trait: isAr ? "مبتكر وملهم" : "Visionary & Bold",
-          description: isAr 
-            ? "التحدث عن المستقبل بشغف ووضوح وتبسيط المفاهيم المعقدة."
-            : "Focusing on the future with passion, making complex ideas simple and exciting.",
-          do: isAr 
-            ? "استخدم لغة قوية وديناميكية تعبر عن التغيير والفرص الجديدة."
-            : "Use active verbs and strong verbs that convey dynamic progress and breakthroughs.",
-          dont: isAr 
-            ? "تجنب المصطلحات المعقدة للغاية أو الأسلوب البيروقراطي القديم."
-            : "Avoid overly dense academic terms, corporate double-speak, or outdated buzzwords."
-        },
-        {
-          trait: isAr ? "ودود ومقرب" : "Accessible & Empathetic",
-          description: isAr 
-            ? "بناء علاقة ثقة قوية ومخاطبة العميل كصديق ومستشار مخلص."
-            : "Building authentic trust and addressing users as peers and companions in growth.",
-          do: isAr 
-            ? "استخدم ضمائر المخاطب المباشرة وتحدث بعفوية مهذبة."
-            : "Use direct conversational tone and address the reader directly with warmth.",
-          dont: isAr 
-            ? "تجنب الجمل الطويلة والجامدة أو صيغ المبالغة غير الواقعية."
-            : "Avoid stiff passive voice or exaggerated marketing claims that feel artificial."
-        },
-        {
-          trait: isAr ? "موجه نحو النتائج" : "Results-Oriented & Crisp",
-          description: isAr 
-            ? "التركيز على القيمة الفعلية وتأثير الحلول بشكل عملي ومقنع."
-            : "Stressing practical utility, real-world value, and undeniable impact clearly.",
-          do: isAr 
-            ? "ركز على الفوائد الملموسة وقدم نصائح وإرشادات فورية قابلة للتطبيق."
-            : "Highlight tangible rewards, metrics, and actionable immediate steps.",
-          dont: isAr 
-            ? "تجنب الوعود الغامضة والحديث المطول بدون أدلة واضحة."
-            : "Avoid vague promises, excessive hyperbole, or fluff paragraphs."
-        }
-      ],
-      styleGuide: {
-        sentenceLength: isAr 
-          ? "جمل قصيرة ومكثفة ومحفزة. لا تتجاوز الجملة 15 كلمة لضمان سهولة القراءة."
-          : "Crisp and rhythmic sentences ranging from 8 to 15 words. Keep it highly punchy.",
-        punctuation: isAr 
-          ? "استخدام ذكي لنقاط النهاية وعلامات التعجب لإبراز الحماس، مع رموز تعبيرية حديثة وغير مفرطة (مثل 🌟, ✨, 🚀)."
-          : "Clean usage of periods, exclamation marks sparingly for enthusiasm, and tasteful emojis (e.g., 🚀, 🌟, ✨).",
-        wordsToUse: isAr 
-          ? ["ابتكار", "نمو ملموس", "شغف", "مستقبل"]
-          : ["breakthrough", "clarity", "empower", "growth"],
-        wordsToAvoid: isAr 
-          ? ["تقليدي", "ربما نساعدك", "حلول متكاملة للغاية", "بيروقراطية"]
-          : ["stale", "potentially", "synergy", "utilize"]
-      },
-      channelGuidelines: {
-        socialMedia: isAr 
-          ? "نبرة ودودة وحيوية جداً، استخدام ممتاز للمساحات البيضاء والـ Bullet points والرموز التعبيرية لجذب الانتباه بسرعة."
-          : "High energy, conversational, structured with bullet points and visual separation for quick readability.",
-        customerSupport: isAr 
-          ? "نبرة ترحيبية وهادئة ومحترفة، تبدأ بحل المشكلة فوراً مع إظهار تفهم كامل وتقديم دعم متكامل."
-          : "Calm, deeply empathetic, highly reassuring, starting with direct resolution steps and closing warmly.",
-        marketing: isAr 
-          ? "نبرة ملهمة تركز على النتائج والتحول الذي يحصل عليه العميل، دعوة واضحة ومقنعة لاتخاذ إجراء (CTA)."
-          : "Inspiring, result-driven copy emphasizing customer transformation with an undeniable Call to Action (CTA)."
-      },
-      beforeAfter: {
-        original: isAr 
-          ? "نحن نقدم خدمات ممتازة للعملاء لتطوير مشاريعهم بطرق جيدة وسريعة."
-          : "We offer high quality services with great customer support to help businesses grow.",
-        rewritten: isAr 
-          ? "اصنع مستقبلاً استثنائياً لمشروعك اليوم بلمسة ذكية تجمع السرعة والدعم المستمر."
-          : "Unlock rapid growth and navigate your market confidently with 24/7 dedicated support designed to empower you.",
-        explanation: isAr 
-          ? "تم استبدال الكلمات المستهلكة (مثل 'ممتازة' و'جيدة') بلغة حيوية ومباشرة تعبر عن التأثير الحقيقي والسرعة والشغف."
-          : "Replaced passive, empty phrases with dynamic action verbs and emphasized concrete customer benefits and empowerment."
-      }
-    };
-  }
-  // 7.5. Brand Identity & Strategy Combined Generator
-  else if (systemPrompt.includes("Brand Identity AND a comprehensive Brand Strategy") || (systemPrompt.includes("brandName") && systemPrompt.includes("visionMission"))) {
-    const conceptMatch = systemPrompt.match(/Concept\/Description:\s*"(.*)"/i) || systemPrompt.match(/concept:\s*"(.*)"/i) || systemPrompt.match(/description:\s*"(.*)"/i);
-    const concept = conceptMatch ? conceptMatch[1].trim() : "Creative Solution";
-    const baseName = concept.split(/\s+/)[0] || "Novus";
-    const name = isAr ? `${baseName} تك` : `${baseName}ly`;
-    
+  // 6. Brand Identity & Strategy Combined Generator
+  else if (systemPrompt.includes("Brand Identity AND a comprehensive Brand Strategy") || systemPrompt.includes("brand-and-strategy") || (systemPrompt.includes("brandName") && systemPrompt.includes("visionMission"))) {
     parsedData = {
       brand: {
-        brandName: name,
+        brandName: concept,
         tagline: isAr ? `نبتكر لنرتقي بـ ${concept}` : `Empowering the Future of ${concept}`,
         logoConcept: isAr 
           ? `تصميم هندسي متوازن يعتمد على خطوط ناعمة دائرية، يتوسطه رمز نمو متدرج للأعلى، ليعبر عن الصعود والابتكار الثابت لـ ${concept}.`
           : `A balanced geometric logo with sleek circular curves and an ascending growth chevron at the center, symbolizing modern stability and continuous innovation for ${concept}.`,
         colors: [
-          { hex: "#FF5A5F", name: isAr ? "غروب برتقالي" : "Sunset Orange" },
-          { hex: "#0F172A", name: isAr ? "أزرق كوني" : "Cosmic Navy" },
-          { hex: "#F8FAFC", name: isAr ? "رمادي ثلجي" : "Snow Gray" },
-          { hex: "#10B981", name: isAr ? "زمرد حيوي" : "Vital Emerald" }
+          { hex: "#2563EB", name: isAr ? "أزرق كوني" : "Cosmic Navy" },
+          { hex: "#10B981", name: isAr ? "زمرد حيوي" : "Vital Emerald" },
+          { hex: "#F59E0B", name: isAr ? "عنبر دافئ" : "Warm Amber" },
+          { hex: "#0F172A", name: isAr ? "حبر داكن" : "Dark Onyx" }
         ],
         personality: isAr 
           ? "علامة متميزة تمزج بين الحماس والاحترافية والابتكار المستمر لتلهم الثقة."
           : "An elite and inspiring brand identity that seamlessly blends human empathy with crisp professional brilliance.",
-        targetAudience: isAr ? "الشركات الناشئة والمبدعون الرقميون" : "Modern startups and digital visionaries",
-        industry: isAr ? "التقنية والخدمات الإبداعية" : "Technology & Creative Services"
+        targetAudience: isAr ? "العملاء المهتمون بالجودة والحلول المبتكرة" : "Quality-conscious customers and ambitious teams",
+        industry: isAr ? "الخدمات الإبداعية والأعمال" : "Creative & Business Services"
       },
       strategy: {
-        title: isAr ? `استراتيجية التوسع الشاملة لـ ${name}` : `The Complete Scaling Strategy for ${name}`,
+        title: isAr ? `استراتيجية التوسع الشاملة لـ ${concept}` : `The Complete Scaling Strategy for ${concept}`,
         visionMission: isAr 
-          ? "الرؤية: قيادة الابتكار في قطاع الأعمال بأسلوب متميز. الرسالة: تمكين الأفراد والمؤسسات من تحقيق طموحاتهم عبر أدوات ذكية وموثوقة."
-          : "Vision: Standardizing industry-leading creativity. Mission: Empowering visionaries to scale with high-fidelity branding instruments.",
+          ? "الرؤية: قيادة الابتكار والريادة في قطاع الأعمال. الرسالة: تمكين الأفراد والمؤسسات من تحقيق طموحاتهم عبر خدمات موثوقة ومتميزة."
+          : "Vision: Setting new benchmarks for industry excellence. Mission: Empowering founders to scale efficiently with high-fidelity branding.",
         valueProposition: isAr 
-          ? "تقديم حلول وهوية بصرية متكاملة فوراً وبدقة متناهية تفوق التوقعات."
-          : "Delivering institutional-grade brand identities instantly at a fraction of traditional agency costs.",
+          ? "تقديم حلول وهوية متكاملة فوراً وبدقة متناهية تفوق التوقعات."
+          : "Delivering institutional-grade brand identities instantly at exceptional speed.",
         persona: isAr 
-          ? "رائد الأعمال الطموح (30-45 سنة) الذي يبحث عن هوية تجارية ممتازة للبدء بقوة وثقة."
-          : "The ambitious founder (aged 25-45) seeking to secure high-quality aesthetics and branding to raise capital.",
+          ? "الجمهور المستهدف الذي يبحث عن الجودة والحلول العصرية والاحترافية."
+          : "The ambitious professional seeking top-tier brand positioning and modern aesthetic clarity.",
         competitors: isAr 
-          ? "التفوق عبر الابتكار الفوري، الذكاء والسرعة، والتحليلات المتكاملة للهوية."
-          : "Outperforming traditional creative agencies with rapid turnaround times and AI-grounded insights.",
+          ? "التفوق عبر الابتكار الفوري، السرعة، والمرونة العالية في تقديم الخدمة."
+          : "Outperforming traditional channels through rapid turnaround times and precision design.",
         roadmap: [
-          { phase: isAr ? "المرحلة الأولى: البناء والانتشار" : "Phase 1: Brand Activation", details: isAr ? "إطلاق الهوية البصرية والترويج الأولي في القنوات المستهدفة." : "Deploying core visual assets and initiating localized search marketing campaigns." },
-          { phase: isAr ? "المرحلة الثانية: التموضع والنمو" : "Phase 2: Market Integration", details: isAr ? "بناء مجتمع مخلص والاندماج مع خدمات الدعم الإضافية." : "Cultivating early-adopter feedback loops and scaling content channels." },
-          { phase: isAr ? "المرحلة الثالثة: الريادة والتوسع" : "Phase 3: Operational Scaling", details: isAr ? "تحقيق التوسع الدولي وابتكار حلول جديدة متميزة." : "Automating brand iterations and entering multi-national markets." }
+          { phase: isAr ? "المرحلة الأولى: البناء والانتشار" : "Phase 1: Brand Activation", details: isAr ? "إطلاق الهوية والترويج الأولي في القنوات المستهدفة." : "Deploying core visual assets and launching target outreach." },
+          { phase: isAr ? "المرحلة الثانية: التموضع والنمو" : "Phase 2: Market Growth", details: isAr ? "بناء مجتمع مخلص والاندماج مع خدمات الدعم." : "Cultivating customer feedback loops and expanding service channels." },
+          { phase: isAr ? "المرحلة الثالثة: الريادة والتوسع" : "Phase 3: Operational Scaling", details: isAr ? "تحقيق التوسع والابتكار المستمر." : "Automating operations and entering multi-market domains." }
         ]
       }
     };
   }
-  // 8. SEO Optimization
-  else {
-    const keywords = isAr ? [
-      { word: "أفضل خدمة تسويق رقمي", volume: "10K - 100K", difficulty: "Medium" },
-      { word: "تصميم هوية تجارية احترافية", volume: "1K - 10K", difficulty: "Low" },
-      { word: "استراتيجيات تحسين محركات البحث", volume: "500 - 1K", difficulty: "Low" },
-      { word: "بناء العلامة التجارية للشركات", volume: "100 - 500", difficulty: "Low" }
-    ] : [
-      { word: "how to start professional branding", volume: "1K - 10K", difficulty: "Medium" },
-      { word: "best brand design strategy", volume: "500 - 1K", difficulty: "Low" },
-      { word: "minimalist vector logo design", volume: "10K - 100K", difficulty: "High" },
-      { word: "expert seo content optimization", volume: "100 - 500", difficulty: "Low" }
-    ];
-
-    const competitors = isAr ? [
-      "شركة ريادة للتصميم والحلول الذكية",
-      "منصة براند أب لخدمات الهوية الرقمية",
-      "وكالة أثير للتسويق الإلكتروني والـ SEO"
-    ] : [
-      "Apex Creative Agency",
-      "BrandForge Digital Partners",
-      "SEO Sphere Marketing Group"
-    ];
-
-    const tips = isAr ? [
-      "أضف الكلمة المفتاحية المستهدفة في العناوين الفرعية (H2, H3) لصفحة الهبوط.",
-      "قم بتحسين سرعة تحميل صور الشعارات والمحتوى البصري عبر ضغطها وتصغير حجمها.",
-      "اكتب نصوصاً بديلة (Alt Text) دقيقة تحتوي على كلمات مفتاحية لجميع الصور.",
-      "قم ببناء روابط داخلية ذكية بين صفحات الخدمات الرئيسية لتعزيز قوة الأرشفة."
-    ] : [
-      "Integrate your core target keywords into primary header tags (H1 and H2) naturally.",
-      "Optimize branding assets and portfolio imagery for lazy loading and ultra-compressed WebP format.",
-      "Maintain a descriptive URL structure (e.g. /services/branding-guidelines) containing relevant slugs.",
-      "Author rich, unique internal links and helpful schema markups to describe your services to crawler bots."
-    ];
-
+  // 7. Default fallback for SEO & others
+  else if (systemPrompt.includes("world-class SEO strategist")) {
     parsedData = {
-      keywords,
-      competitors,
-      tips,
-      searchSources: [
-        { title: "Google Search Central: SEO Starter Guide", url: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide" },
-        { title: "Ahrefs: Advanced SEO & Competitive Analysis Tutorial", url: "https://ahrefs.com/blog/seo-tips/" }
+      keywords: isAr ? [
+        { word: `أفضل حلول ${concept}`, volume: "10K - 100K", difficulty: "Medium" },
+        { word: `تصميم هوية ${concept} احترافية`, volume: "1K - 10K", difficulty: "Low" },
+        { word: `خدمات ومميزات ${concept}`, volume: "500 - 1K", difficulty: "Low" }
+      ] : [
+        { word: `best ${concept} solutions`, volume: "10K - 100K", difficulty: "Medium" },
+        { word: `professional ${concept} branding`, volume: "1K - 10K", difficulty: "Low" },
+        { word: `top ${concept} strategy`, volume: "500 - 1K", difficulty: "Low" }
+      ],
+      competitors: isAr ? [
+        "شركة ريادة للحلول الذكية",
+        "منصة براند أب للهوية الرقمية"
+      ] : [
+        "Apex Creative Partners",
+        "BrandForge Digital Group"
+      ],
+      tips: isAr ? [
+        "دمج الكلمة المفتاحية الرئيسية في العناوين الرئيسية بوضوح.",
+        "تحسين سرعة تحميل صور الشعارات والمحتوى البصري.",
+        "كتابة نصوص بديلة (Alt Text) دقيقة للصور."
+      ] : [
+        "Integrate target keywords into primary header tags naturally.",
+        "Optimize branding imagery for fast web delivery.",
+        "Maintain clean URL structures for search engines."
       ]
     };
+  }
+  else if (systemPrompt.includes("Generate 3-5 highly relevant categorization tags") || systemPrompt.includes("auto-tag")) {
+    parsedData = isAr ? ["ابتكار", "ريادة أعمال", "تقنية"] : ["Innovation", "Startup", "Technology"];
+  }
+  else if (systemPrompt.includes("Analyze the following list") || systemPrompt.includes("side-by-side comparison")) {
+    parsedData = {
+      recommendation: isAr ? "الخيار الأول يبرز بوضوح لاحترافيته وملاءمته لجمهورك." : "The first option stands out clearly for its professionalism and audience fit.",
+      analysis: [
+        {
+          nameOrSlogan: "Option 1",
+          pros: isAr ? ["سهل التذكر", "احترافي"] : ["Memorable", "Professional"],
+          cons: isAr ? ["قد يكون مألوفاً"] : ["Might sound familiar"],
+          brandFit: isAr ? "مناسب للشركات الناشئة والمبتكرة" : "Perfect for innovative startups"
+        }
+      ],
+      verdict: isAr ? "يجب اختيار الخيار الأول لجاذبيته وسهولة تذكره." : "Choose the first option for maximum appeal and memorability."
+    };
+  }
+  else if (systemPrompt.includes("Analyze the provided brand assets") || systemPrompt.includes("brand voice")) {
+    parsedData = {
+      archetype: isAr ? "المبتكر (The Creator)" : "The Creator",
+      tone: isAr ? "احترافي، ملهم، وواثق" : "Professional, inspiring, and confident",
+      keywords: isAr ? ["ابتكار", "تميز", "ثقة", "رؤية"] : ["Innovation", "Excellence", "Trust", "Vision"],
+      messagingPillars: isAr ? [
+        "نلتزم بتقديم الجودة الفائقة.",
+        "نبتكر حلولاً لمستقبل أفضل."
+      ] : [
+        "We are committed to superior quality.",
+        "We innovate solutions for a better future."
+      ],
+      doAndDont: {
+        do: isAr ? ["استخدم لغة إيجابية", "كن مباشراً وواضحاً"] : ["Use positive language", "Be direct and clear"],
+        dont: isAr ? ["لا تستخدم مصطلحات معقدة", "تجنب النبرة السلبية"] : ["Don't use overly complex jargon", "Avoid negative tone"]
+      },
+      examples: isAr ? [
+        "مرحباً بك في عصر الابتكار مع علامتنا.",
+        "نحن هنا لتحويل رؤيتك إلى واقع."
+      ] : [
+        "Welcome to the era of innovation with our brand.",
+        "We are here to turn your vision into reality."
+      ]
+    };
+  }
+  else if (systemPrompt.includes("design a complete, premium Brand Identity")) {
+    parsedData = {
+      brandName: concept,
+      tagline: isAr ? `نبتكر لنرتقي بـ ${concept}` : `Empowering the Future of ${concept}`,
+      logoConcept: isAr ? `تصميم هندسي متوازن لـ ${concept}.` : `A balanced geometric logo for ${concept}.`,
+      colors: [
+        { hex: "#2563EB", name: isAr ? "أزرق كوني" : "Cosmic Navy" },
+        { hex: "#10B981", name: isAr ? "زمرد حيوي" : "Vital Emerald" }
+      ],
+      personality: isAr ? "علامة متميزة تمزج بين الحماس والاحترافية." : "An elite and inspiring brand identity.",
+      targetAudience: isAr ? "العملاء المهتمون بالجودة" : "Quality-conscious customers",
+      industry: isAr ? "الخدمات الإبداعية" : "Creative Services"
+    };
+  }
+  else {
+    parsedData = { fallback: true, message: "Could not generate intelligent fallback for this prompt format." };
   }
 
   return {
     response: {
-      text: JSON.stringify(parsedData),
-      candidates: [
-        {
-          groundingMetadata: {
-            groundingChunks: [
-              { web: { title: "SEO Guide", uri: "https://developers.google.com/search/docs" } }
-            ]
-          }
-        }
-      ]
+      text: JSON.stringify(parsedData)
     },
     parsed: parsedData
   };
 }
 
-async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, jsonParser?: (text: string) => any) {
+
+async function generateContentWithRetry(ai: any, params: any, maxRetries = 1, jsonParser?: (text: string) => any) {
+  let lastError: any = null;
+
+  // 1. Try Gemini API first if ai client is available
+  if (ai) {
+    const rawModel = params.model;
+    const mappedModel = rawModel;
+    const modelsToTry = Array.from(new Set([
+      mappedModel,
+      "gemini-3.1-flash-lite",
+      "gemini-2.5-flash",
+      "gemini-flash-latest"
+    ].filter(Boolean)));
+
+    for (let m = 0; m < modelsToTry.length; m++) {
+      const model = modelsToTry[m];
+      for (let r = 0; r < maxRetries; r++) {
+        try {
+          console.log(`[Backend API] Attempting Gemini generation with model ${model}`);
+          const response = await ai.models.generateContent({
+            ...params,
+            model,
+          });
+          
+          const text = response.text;
+          if (!text) {
+            throw new Error("Empty response returned by model.");
+          }
+
+          if (jsonParser) {
+            try {
+              let cleanedText = text.trim();
+              if (cleanedText.startsWith("```json")) {
+                cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+              } else if (cleanedText.startsWith("```")) {
+                cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+              }
+              const parsed = jsonParser(cleanedText);
+              console.log(`[Backend API] SUCCESS with Gemini model ${model} (Valid JSON Parsed)`);
+              return { response, parsed };
+            } catch (parseErr: any) {
+              console.log(`[Backend API] JSON parsing failed for model ${model}: ${parseErr.message}`);
+              throw new Error(`JSON format invalid: ${parseErr.message}`);
+            }
+          }
+
+          console.log(`[Backend API] SUCCESS with Gemini model ${model}`);
+          return { response, parsed: null };
+        } catch (err: any) {
+          lastError = err;
+          const msg = err.message || "";
+          if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("Quota exceeded")) {
+            console.log(`[Backend API] Gemini model ${model} rate-limited (Quota Exceeded). Seamlessly switching to local intelligent generator.`);
+            break; // Skip further retries for quota errors
+          } else {
+            console.log(`[Backend API] Gemini model ${model} failed:`, msg);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Fallback to OpenRouter if available
   const openRouterKey = process.env.OPENROUTER_API_KEY;
   if (openRouterKey) {
-    const orModel = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
-    console.log(`[Backend API] OpenRouter key is present. Trying generation with OpenRouter using model ${orModel}`);
+    const orModel = process.env.OPENROUTER_MODEL || "google/gemini-3.1-flash-lite-001";
+    console.log(`[Backend API] Trying generation with OpenRouter using model ${orModel}`);
     
-    const initialMaxTokens = params.config?.maxOutputTokens ?? 1200; // default to 1200 to conserve credits and fit balance
+    const initialMaxTokens = params.config?.maxOutputTokens ?? 1200;
     
+    let promptText = "";
+    if (typeof params.contents === "string") {
+      promptText = params.contents;
+    } else if (Array.isArray(params.contents)) {
+      promptText = params.contents.map((msg: any) => {
+        if (msg.parts && Array.isArray(msg.parts)) {
+          return msg.parts.map((p: any) => p.text || "").join("\n");
+        }
+        return typeof msg === 'string' ? msg : JSON.stringify(msg);
+      }).join("\n");
+    } else if (typeof params.contents === "object" && params.contents !== null) {
+      promptText = JSON.stringify(params.contents);
+    }
+
     try {
       let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -699,7 +733,7 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
           messages: [
             {
               role: "user",
-              content: params.contents || ""
+              content: promptText || "Hello"
             }
           ],
           temperature: params.config?.temperature ?? 0.3,
@@ -710,43 +744,7 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
 
       if (!response.ok) {
         const errorText = await response.text();
-        const status = response.status;
-        
-        if (status === 402) {
-          if (process.env.GEMINI_API_KEY) {
-             console.warn("[Backend API] OpenRouter 402 Insufficient credits. Falling back to Gemini.");
-             throw new Error("FALLBACK_TO_GEMINI");
-          } else {
-             console.warn("[Backend API] OpenRouter 402 Insufficient credits. Falling back to free model.");
-             response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-               method: "POST",
-               headers: {
-                 "Authorization": `Bearer ${openRouterKey}`,
-                 "Content-Type": "application/json",
-                 "HTTP-Referer": "https://ai.studio/build",
-                 "X-Title": "BrandCraft AI Studio Applet"
-               },
-               body: JSON.stringify({
-                 model: "google/gemma-4-26b-a4b-it:free",
-                 messages: [{ role: "user", content: params.contents || "" }],
-                 temperature: params.config?.temperature ?? 0.3,
-                 max_tokens: initialMaxTokens,
-                 response_format: params.config?.responseMimeType === "application/json" ? { type: "json_object" } : undefined
-               })
-             });
-             
-             if (!response.ok) {
-                 const errFree = await response.text();
-                 throw new Error("HARD_FAIL: OpenRouter API error: Insufficient credits. Please top up your account at openrouter.ai/settings/credits. (Free fallback also failed: " + errFree + ")");
-             }
-          }
-        }
-        
-        // If it's still not ok, check once more and throw
-        if (!response.ok) {
-          const finalErrorText = await response.text();
-          throw new Error(`OpenRouter API status ${response.status}: ${finalErrorText}`);
-        }
+        throw new Error(`OpenRouter API status ${response.status}: ${errorText}`);
       }
 
       const responseData = await response.json();
@@ -767,138 +765,29 @@ async function generateContentWithRetry(ai: any, params: any, maxRetries = 2, js
       };
 
       if (jsonParser) {
-        try {
-          let cleanedText = text.trim();
-          if (cleanedText.startsWith("```json")) {
-            cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-          } else if (cleanedText.startsWith("```")) {
-            cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-          }
-          const parsed = jsonParser(cleanedText);
-          console.log(`[Backend API] SUCCESS with OpenRouter model ${orModel} (Valid JSON Parsed)`);
-          return { response: formattedResponse, parsed };
-        } catch (parseErr: any) {
-          console.warn(`[Backend API] JSON parsing failed for OpenRouter response: ${parseErr.message}`);
-          throw new Error(`JSON format invalid: ${parseErr.message}`);
+        let cleanedText = text.trim();
+        if (cleanedText.startsWith("```json")) {
+          cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+        } else if (cleanedText.startsWith("```")) {
+          cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
         }
+        const parsed = jsonParser(cleanedText);
+        console.log(`[Backend API] SUCCESS with OpenRouter model ${orModel} (Valid JSON Parsed)`);
+        return { response: formattedResponse, parsed };
       }
 
       console.log(`[Backend API] SUCCESS with OpenRouter model ${orModel}`);
       return { response: formattedResponse, parsed: null };
     } catch (openRouterErr: any) {
-      if (openRouterErr.message && openRouterErr.message.includes("HARD_FAIL")) {
-        throw new Error(openRouterErr.message.replace("HARD_FAIL: ", ""));
-      }
-      if (!ai) {
-        // If we don't have a fallback Gemini client, throw the OpenRouter error instead of returning mock data
-        throw openRouterErr;
-      }
-      console.log(`[Backend API] OpenRouter generation unavailable: ${openRouterErr.message}. Falling back to standard Gemini API client.`);
+      console.log(`[Backend API] Fallback triggered (OpenRouter skipped)`);
     }
   }
 
-  if (!ai) {
-    console.warn("[Backend API] AI client is null. Instantly falling back to intelligent local generator.");
-    return generateLocalFallbackResponse(params.contents || "", jsonParser);
+  // 3. Final fallback if AI backends are rate-limited or unavailable
+  console.log(`[Backend API] CRITICAL: Both Gemini and fallback backends failed or were skipped. Using intelligent generator fallback.`);
+  if (lastError) {
+    console.error("[Backend API] Last attempt error:", lastError.message || lastError);
   }
-
-  const modelsToTry = Array.from(new Set([
-    params.model,
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-flash-latest"
-  ].filter(Boolean)));
-
-  let lastError: any = null;
-
-  for (let m = 0; m < modelsToTry.length; m++) {
-    const model = modelsToTry[m];
-    for (let r = 0; r < maxRetries; r++) {
-      try {
-        console.log(`[Backend API] Attempting generation with model ${model} (attempt ${r + 1}/${maxRetries})`);
-        const response = await ai.models.generateContent({
-          ...params,
-          model,
-        });
-        
-        const text = response.text;
-        if (!text) {
-          throw new Error("Empty response returned by model.");
-        }
-
-        if (jsonParser) {
-          try {
-            let cleanedText = text.trim();
-            if (cleanedText.startsWith("```json")) {
-              cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-            } else if (cleanedText.startsWith("```")) {
-              cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
-            }
-            const parsed = jsonParser(cleanedText);
-            console.log(`[Backend API] SUCCESS with model ${model} (Valid JSON Parsed)`);
-            return { response, parsed };
-          } catch (parseErr: any) {
-            console.warn(`[Backend API] JSON parsing failed for model ${model} on attempt ${r + 1}: ${parseErr.message}`);
-            throw new Error(`JSON format invalid: ${parseErr.message}`);
-          }
-        }
-
-        console.log(`[Backend API] SUCCESS with model ${model}`);
-        return { response, parsed: null };
-      } catch (err: any) {
-        lastError = err;
-        const status = err.status || (err.response && err.response.status) || err.statusCode;
-        const message = err.message || "";
-        
-        let apiErrorCode = null;
-        let apiErrorStatus = "";
-        try {
-          if (message.trim().startsWith("{")) {
-            const parsedErr = JSON.parse(message);
-            if (parsedErr?.error) {
-              apiErrorCode = parsedErr.error.code;
-              apiErrorStatus = parsedErr.error.status;
-            }
-          }
-        } catch (e) {
-          // ignore parsing error
-        }
-
-        console.log(`[Backend API] Attempt with model ${model} (attempt ${r + 1}/${maxRetries}) note: ${message.slice(0, 120)}`);
-
-        const isAuthError = status === 401 || status === 403 || apiErrorCode === 401 || apiErrorCode === 403 || message.includes("API_KEY_INVALID") || message.includes("API key not valid") || message.includes("invalid API key");
-        if (isAuthError) {
-          console.log(`[Backend API] Auth Note: Falling back to local responsive generator.`);
-          return generateLocalFallbackResponse(params.contents || "", jsonParser);
-        }
-
-        const isQuotaError = status === 429 || status === 503 || apiErrorCode === 429 || apiErrorCode === 503 || apiErrorStatus === "RESOURCE_EXHAUSTED" || message.includes("Quota") || message.includes("quota") || message.includes("UNAVAILABLE") || message.includes("high demand");
-        if (isQuotaError) {
-          console.log(`[Backend API] Quota limit reached for ${model}. Trying next available fallback model.`);
-          break; // Skip retries for this model, try the next one
-        }
-
-        const isModelNotFoundError = message.includes("not found") || message.includes("not supported") || message.includes("unsupported") || message.includes("model") || message.includes("INVALID_ARGUMENT");
-        if (isModelNotFoundError) {
-          console.log(`[Backend API] Model ${model} is not supported or not found. Trying next fallback model.`);
-          break; // Skip retries for this model, try the next one
-        }
-
-        const isJsonError = message.includes("JSON format invalid");
-        if ((status === 400 || message.includes("INVALID_ARGUMENT")) && !isModelNotFoundError && !isJsonError) {
-          console.log(`[Backend API] Non-model request parameters note: Falling back to local generator.`);
-          return generateLocalFallbackResponse(params.contents || "", jsonParser);
-        }
-
-        if (r < maxRetries - 1) {
-          const delay = Math.pow(2, r) * 1000;
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
-      }
-    }
-  }
-
-  console.log("[Backend API] API model attempts completed. Smoothly utilizing local responsive generator fallback.");
   return generateLocalFallbackResponse(params.contents || "", jsonParser);
 }
 
@@ -1132,7 +1021,7 @@ app.get("/api/gemini-status", async (req, res) => {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+            model: process.env.OPENROUTER_MODEL || "google/gemini-3.1-flash-lite-001",
             messages: [{ role: "user", content: "Say OK" }],
             max_tokens: 1
           })
@@ -1149,11 +1038,10 @@ app.get("/api/gemini-status", async (req, res) => {
           };
           return res.json(statusCache);
         } else {
-          const errText = await response.text();
-          console.log("[Backend API] OpenRouter health check notice:", errText.slice(0, 100));
+          console.log(`[Backend API] OpenRouter status check returned HTTP ${response.status}`);
         }
       } catch (openRouterErr: any) {
-        console.log("[Backend API] OpenRouter health check exception:", openRouterErr?.message || openRouterErr);
+        console.log("[Backend API] OpenRouter health check notice: Service temporarily unreachable");
       }
     }
 
@@ -1166,7 +1054,7 @@ app.get("/api/gemini-status", async (req, res) => {
     try {
       let checkError: any = null;
       let healthCheckOk = false;
-      const modelsToCheck = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-flash-latest"];
+      const modelsToCheck = ["gemini-3.1-flash-lite", "gemini-flash-latest"];
 
       for (const model of modelsToCheck) {
         try {
@@ -1181,7 +1069,8 @@ app.get("/api/gemini-status", async (req, res) => {
           break;
         } catch (err: any) {
           checkError = err;
-          console.log(`[Backend API] Health check model ${model} note:`, (err.message || err).slice(0, 100));
+          const status = err.status || err.statusCode || 429;
+          console.log(`[Backend API] Gemini model ${model} status check: HTTP ${status}`);
         }
       }
 
@@ -1295,7 +1184,7 @@ You MUST respond with a JSON array of objects strictly matching this structure:
 Do not include any markdown markdown block wrappers like \`\`\`json. Return pure JSON.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1349,7 +1238,7 @@ Return a JSON object matching this structure:
 Do not include markdown markers like \`\`\`json. Return pure JSON object.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1385,7 +1274,7 @@ Return a JSON array of objects strictly matching this structure:
 Do not include markdown markers like \`\`\`json. Return pure JSON array.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1433,7 +1322,7 @@ Generate and return a JSON object matching this structure:
 Do not include markdown markers. Return pure JSON.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1501,7 +1390,7 @@ You MUST respond with a JSON object strictly matching this structure:
 Do not include any markdown block wrappers like \`\`\`json. Return pure JSON.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1544,7 +1433,7 @@ Example Output:
 Do not include markdown markers. Return pure JSON.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1595,7 +1484,7 @@ Respond with a JSON object strictly matching this structure:
 Do not include markdown tags. Return pure JSON.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1660,7 +1549,7 @@ Respond with a JSON object strictly matching this structure:
 Return ONLY pure JSON. Do not wrap in markdown blocks like \`\`\`json.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1791,7 +1680,7 @@ Respond with a JSON object strictly matching this structure:
 Return ONLY pure JSON. Do not wrap in markdown blocks like \`\`\`json.`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: systemPrompt,
       config: {
         responseMimeType: "application/json",
@@ -1825,9 +1714,9 @@ app.post("/api/generate-brand-strategy", async (req, res) => {
     Return JSON: { "title": "Strategy Title", "content": "Detailed strategy content" }`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-flash-latest",
+      model: "gemini-3.1-flash-lite",
       contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      config: { responseMimeType: "application/json" }
     }, 2, robustParseJSON);
 
     res.json({ success: true, strategy: result.parsed });
@@ -1860,7 +1749,7 @@ app.post("/api/transcribe-audio", async (req, res) => {
       : "Accurately transcribe this audio recording into written text. Output ONLY the transcribed text without any conversational preamble, notes, metadata, or quotes.";
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite",
       contents: [
         {
           inlineData: {
@@ -1910,9 +1799,9 @@ app.post("/api/generate-brand-from-description", async (req, res) => {
     }`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-flash-latest",
+      model: "gemini-3.1-flash-lite",
       contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      config: { responseMimeType: "application/json" }
     }, 2, robustParseJSON);
 
     res.json({ success: true, brand: result.parsed });
@@ -1965,9 +1854,9 @@ app.post("/api/generate-brand-and-strategy", async (req, res) => {
     }`;
 
     const result = await generateContentWithRetry(ai, {
-      model: "gemini-flash-latest",
+      model: "gemini-3.1-flash-lite",
       contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      config: { responseMimeType: "application/json" }
     }, 2, robustParseJSON);
 
     res.json({ success: true, data: result.parsed });

@@ -232,8 +232,8 @@ function robustParseJSON(text: string): any {
 // Client-side helper to try multiple Gemini models in sequence with exponential retry
 async function generateClientContentWithRetry(ai: any, systemPrompt: string, config: any = {}): Promise<any> {
   const modelsToTry = [
+    "gemini-3.1-flash-lite",
     "gemini-2.5-flash",
-    "gemini-2.5-pro",
     "gemini-flash-latest"
   ];
   let lastError: any = null;
@@ -253,10 +253,10 @@ async function generateClientContentWithRetry(ai: any, systemPrompt: string, con
         return response;
       } catch (err: any) {
         lastError = err;
-        console.log(`[Client API] Attempt with model ${model} (attempt ${r + 1}/2) note:`, err?.message || err);
+        const status = err.status || err.statusCode || 429;
+        console.log(`[Client API] Model ${model} attempt ${r + 1} status: ${status}`);
         
         const message = err.message || "";
-        const status = err.status || err.statusCode;
         
         // If it is a clear authentication/API key error, abort early since no model will work with an invalid key
         const isAuthError = status === 401 || status === 403 || message.includes("API_KEY_INVALID") || message.includes("API key not valid") || message.includes("invalid API key");
@@ -538,6 +538,86 @@ Do not include markdown tags. Return pure JSON.`;
     const text = response.text || "{}";
     const data = robustParseJSON(text);
     return { success: true, comparison: data };
+  }
+
+  if (url.endsWith('/api/generate-brand-from-description')) {
+    const { description, language } = body;
+    const systemPrompt = `You are an elite branding expert and creative director. Based on this description or concept of a new project/idea: "${description}", design a complete, premium Brand Identity.
+Please provide your response in ${language === 'ar' ? 'Arabic' : 'English'}.
+You MUST return a JSON object conforming exactly to this structure:
+{
+  "brandName": "A unique, memorable, and creative name for the brand",
+  "tagline": "A powerful, catchy tagline or slogan",
+  "logoConcept": "A detailed description of an elegant visual logo design concept",
+  "colors": [
+    { "hex": "#HEXCODE", "name": "Cohesive Color Name" }
+  ],
+  "personality": "A brief paragraph describing the brand tone of voice and core personality.",
+  "targetAudience": "Target audience description",
+  "industry": "Industry category"
+}
+Do not include markdown tags. Return pure JSON.`;
+
+    const response = await generateClientContentWithRetry(ai, systemPrompt);
+    const text = response.text || "{}";
+    const data = robustParseJSON(text);
+    return { success: true, brand: data };
+  }
+
+  if (url.endsWith('/api/generate-brand-strategy')) {
+    const { brandName, industry, targetAudience, goals, language } = body;
+    const systemPrompt = `You are a world-class business strategist. Analyze the brand "${brandName}" in the "${industry || 'general'}" industry targeting "${targetAudience || 'general'}".
+Provide a comprehensive 5-part strategy covering Vision & Mission, Value Proposition, Target Audience, Competitive Analysis, and Actionable Roadmap.
+Please deliver the output in ${language === 'ar' ? 'Arabic' : 'English'}.
+Return JSON: { "title": "Strategy Title", "content": "Detailed strategy content" }`;
+
+    const response = await generateClientContentWithRetry(ai, systemPrompt);
+    const text = response.text || "{}";
+    const data = robustParseJSON(text);
+    return { success: true, strategy: data };
+  }
+
+  if (url.endsWith('/api/brand-voice-analyze')) {
+    const { brandName, brandDescription, targetAudience, brandValues, sampleText, language } = body;
+    const systemPrompt = `You are a world-class brand strategist and copywriter.
+Analyze the brand "${brandName}" with description "${brandDescription}" and sample text "${sampleText}".
+Deliver the response in ${language === 'ar' ? 'Arabic' : 'English'}.
+Return JSON matching:
+{
+  "voiceProfile": { "name": "Voice Archetype", "summary": "Core summary" },
+  "traits": [
+    { "trait": "Trait name", "description": "Trait description", "do": "Best practice", "dont": "Avoid" }
+  ],
+  "styleGuide": {
+    "sentenceLength": "Rule",
+    "punctuation": "Rule",
+    "wordsToUse": ["word1", "word2"],
+    "wordsToAvoid": ["word3", "word4"]
+  },
+  "channelGuidelines": { "socialMedia": "Tips", "customerSupport": "Tips", "marketing": "Tips" },
+  "beforeAfter": { "original": "Before text", "rewritten": "After text", "explanation": "Why" }
+}`;
+
+    const response = await generateClientContentWithRetry(ai, systemPrompt);
+    const text = response.text || "{}";
+    const data = robustParseJSON(text);
+    return { success: true, analysis: data };
+  }
+
+  if (url.endsWith('/api/seo-analyze')) {
+    const { niche, language } = body;
+    const systemPrompt = `You are an SEO expert. Analyze niche "${niche}" in ${language || 'en'}.
+Return JSON:
+{
+  "keywords": [ { "word": "Keyword", "volume": "10K-100K", "difficulty": "Low" } ],
+  "competitors": ["Competitor 1", "Competitor 2"],
+  "tips": ["Tip 1", "Tip 2"]
+}`;
+
+    const response = await generateClientContentWithRetry(ai, systemPrompt);
+    const text = response.text || "{}";
+    const data = robustParseJSON(text);
+    return { success: true, analysis: data };
   }
 
   throw new Error(`Unsupported client-side API endpoint: ${url}`);
